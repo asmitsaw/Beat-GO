@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retro Beats — Development Roadmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #FDFBF7;
+      --black: #0A0A0A;
+      --yellow: #FFD166;
+      --pink: #FF6D6A;
+      --cyan: #4AC4E2;
+      --green: #06D6A0;
+      --purple: #B39DDB;
+      --orange: #FF9F1C;
+      --border-w: 3px;
+      --shadow: 4px 4px 0px var(--black);
+      --shadow-lg: 6px 6px 0px var(--black);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--black);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--black);
+      padding: 24px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: var(--border-w) solid var(--black);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--yellow);
+      letter-spacing: -1px;
+    }
+    .header-logo span { color: var(--pink); }
+
+    .header-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--bg);
+      background: var(--purple);
+      border: 2px solid var(--bg);
+      padding: 4px 12px;
+      border-radius: 4px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 56px 48px 32px;
+      border-bottom: var(--border-w) solid var(--black);
+      background: var(--yellow);
+    }
+
+    .hero h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(36px, 6vw, 72px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      color: var(--black);
+    }
+    .hero h1 .accent { color: var(--pink); display: block; }
+
+    .hero-sub {
+      margin-top: 16px;
+      font-size: 16px;
+      max-width: 640px;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* ── SUPABASE BANNER ── */
+    .supabase-banner {
+      margin: 32px 48px 0;
+      border: var(--border-w) solid var(--black);
+      border-radius: 8px;
+      background: var(--green);
+      box-shadow: var(--shadow-lg);
+      padding: 20px 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .banner-icon { font-size: 32px; flex-shrink: 0; margin-top: 2px; }
+    .banner-content {}
+    .banner-title {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+    .banner-body { font-size: 14px; line-height: 1.6; color: #111; }
+    .banner-body code {
+      background: rgba(0,0,0,0.1);
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+    }
+    .banner-tag {
+      display: inline-block;
+      margin-top: 10px;
+      background: var(--black);
+      color: var(--green);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 3px;
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: flex;
+      gap: 0;
+      border-bottom: var(--border-w) solid var(--black);
+      border-top: var(--border-w) solid var(--black);
+      margin-top: 32px;
+    }
+    .stat {
+      flex: 1;
+      padding: 20px 24px;
+      border-right: var(--border-w) solid var(--black);
+      background: var(--bg);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-label { font-size: 12px; color: #555; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+    .stat-num.yellow { color: var(--pink); }
+    .stat-num.green { color: #059669; }
+    .stat-num.cyan { color: #0891b2; }
+    .stat-num.purple { color: #7c3aed; }
+
+    /* ── CONTROLS ── */
+    .controls {
+      padding: 24px 48px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      border-bottom: var(--border-w) solid var(--black);
+      background: var(--bg);
+      position: sticky;
+      top: 77px;
+      z-index: 90;
+    }
+
+    .control-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-right: 4px;
+    }
+
+    .filter-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border: var(--border-w) solid var(--black);
+      border-radius: 4px;
+      background: var(--bg);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 80ms, box-shadow 80ms;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .filter-btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0px var(--black); }
+    .filter-btn:active { transform: translate(4px,4px); box-shadow: 0px 0px 0px var(--black); }
+    .filter-btn.active { background: var(--black); color: var(--yellow); }
+
+    .filter-btn[data-phase="1"].active { background: var(--pink); color: var(--black); }
+    .filter-btn[data-phase="2"].active { background: var(--cyan); color: var(--black); }
+    .filter-btn[data-phase="3"].active { background: var(--purple); color: var(--black); }
+    .filter-btn[data-phase="4"].active { background: var(--orange); color: var(--black); }
+
+    .divider { width: 1px; height: 36px; background: var(--black); margin: 0 8px; }
+
+    .expand-all-btn {
+      margin-left: auto;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border: var(--border-w) solid var(--black);
+      border-radius: 4px;
+      background: var(--yellow);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 80ms, box-shadow 80ms;
+      text-transform: uppercase;
+    }
+    .expand-all-btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0px var(--black); }
+    .expand-all-btn:active { transform: translate(4px,4px); box-shadow: 0px 0px 0px var(--black); }
+
+    /* ── PROGRESS ── */
+    .progress-bar-wrap {
+      padding: 0 48px 24px;
+      background: var(--bg);
+      border-bottom: var(--border-w) solid var(--black);
+    }
+    .progress-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    .progress-track {
+      height: 16px;
+      background: #E5E0D8;
+      border: var(--border-w) solid var(--black);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--yellow),
+        var(--yellow) 10px,
+        #f5c430 10px,
+        #f5c430 20px
+      );
+      width: 5%;
+      transition: width 0.6s ease;
+      border-right: var(--border-w) solid var(--black);
+    }
+
+    /* ── MAIN GRID ── */
+    .main {
+      padding: 40px 48px 80px;
+    }
+
+    /* ── PHASE SECTION ── */
+    .phase-section {
+      margin-bottom: 56px;
+    }
+    .phase-section.hidden { display: none; }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: var(--border-w) solid var(--black);
+    }
+
+    .phase-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1;
+      width: 64px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .phase-info {}
+    .phase-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+    .phase-desc { font-size: 14px; color: #444; margin-top: 4px; line-height: 1.5; max-width: 600px; }
+
+    .phase-tag {
+      margin-left: auto;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border: var(--border-w) solid var(--black);
+      border-radius: 4px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    /* Phase colors */
+    .phase-1 .phase-num { color: var(--pink); }
+    .phase-1 .phase-tag { background: var(--pink); }
+    .phase-2 .phase-num { color: #0891b2; }
+    .phase-2 .phase-tag { background: var(--cyan); }
+    .phase-3 .phase-num { color: #7c3aed; }
+    .phase-3 .phase-tag { background: var(--purple); }
+    .phase-4 .phase-num { color: var(--orange); }
+    .phase-4 .phase-tag { background: var(--orange); }
+
+    /* ── CARDS GRID ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    /* ── FEATURE CARD ── */
+    .card {
+      border: var(--border-w) solid var(--black);
+      border-radius: 8px;
+      background: var(--bg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform 100ms, box-shadow 100ms;
+      cursor: pointer;
+    }
+    .card:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-lg); }
+    .card.expanded { box-shadow: var(--shadow-lg); }
+
+    .card-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border-bottom: var(--border-w) solid transparent;
+      transition: border-color 0.2s;
+    }
+    .card.expanded .card-header { border-bottom-color: var(--black); }
+
+    .card-icon { font-size: 28px; flex-shrink: 0; }
+
+    .card-meta { flex: 1; min-width: 0; }
+    .card-title {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.3;
+    }
+    .card-subtitle { font-size: 13px; color: #555; margin-top: 3px; }
+
+    .card-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border: 2px solid var(--black);
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-must { background: var(--pink); }
+    .badge-high { background: var(--yellow); }
+    .badge-nice { background: var(--cyan); }
+    .badge-future { background: var(--purple); color: var(--black); }
+    .badge-db { background: var(--green); }
+    .badge-pkg { background: var(--bg); }
+    .badge-new { background: var(--orange); }
+
+    .card-chevron {
+      font-size: 18px;
+      flex-shrink: 0;
+      transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+      margin-top: 4px;
+      opacity: 0.5;
+    }
+    .card.expanded .card-chevron { transform: rotate(180deg); opacity: 1; }
+
+    /* ── CARD BODY (EXPANDED) ── */
+    .card-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(.4,0,.2,1);
+    }
+    .card.expanded .card-body { max-height: 800px; }
+
+    .card-body-inner { padding: 20px; }
+
+    .impl-section { margin-bottom: 16px; }
+    .impl-section:last-child { margin-bottom: 0; }
+
+    .impl-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .impl-list { list-style: none; }
+    .impl-list li {
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 4px 0;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .impl-list li::before { content: "→"; color: var(--pink); flex-shrink: 0; font-family: 'Space Mono', monospace; }
+
+    .code-block {
+      background: var(--black);
+      color: var(--green);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 12px 16px;
+      border-radius: 4px;
+      border: var(--border-w) solid var(--black);
+      overflow-x: auto;
+      white-space: pre;
+      margin-top: 8px;
+    }
+
+    .packages-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
+    .supabase-note {
+      background: var(--green);
+      border: 2px solid var(--black);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .warning-note {
+      background: var(--yellow);
+      border: 2px solid var(--black);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ── LISTEN EVENTS STICKY TIP ── */
+    .sticky-tip {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      max-width: 300px;
+      background: var(--pink);
+      border: var(--border-w) solid var(--black);
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      padding: 16px;
+      z-index: 200;
+      font-size: 13px;
+      line-height: 1.5;
+      transition: transform 0.4s cubic-bezier(.4,0,.2,1), opacity 0.4s;
+    }
+    .sticky-tip.hidden { transform: translateY(120%); opacity: 0; pointer-events: none; }
+    .sticky-tip-title {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .sticky-tip code {
+      background: rgba(0,0,0,0.15);
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+    }
+    .sticky-close {
+      position: absolute;
+      top: 8px; right: 10px;
+      background: none; border: none;
+      font-size: 18px; cursor: pointer;
+      line-height: 1;
+    }
+
+    /* ── NO RESULTS ── */
+    .no-results {
+      text-align: center;
+      padding: 80px 24px;
+      font-family: 'Space Mono', monospace;
+      display: none;
+    }
+    .no-results.visible { display: block; }
+    .no-results h3 { font-size: 36px; margin-bottom: 8px; }
+    .no-results p { color: #555; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      header { padding: 16px 20px; }
+      .hero { padding: 32px 20px 24px; }
+      .supabase-banner { margin: 20px 20px 0; }
+      .stats-row { flex-wrap: wrap; }
+      .stat { min-width: 50%; }
+      .controls { padding: 16px 20px; top: 65px; }
+      .divider { display: none; }
+      .expand-all-btn { margin-left: 0; }
+      .progress-bar-wrap { padding: 0 20px 20px; }
+      .main { padding: 24px 20px 60px; }
+      .phase-header { flex-wrap: wrap; }
+      .phase-tag { margin-left: 0; }
+      .sticky-tip { max-width: 90vw; right: 12px; bottom: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-logo">RETRO<span>BEATS</span></div>
+  <div class="header-badge">🗺 DEVELOPMENT ROADMAP v1.0</div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>
+    What to build next.
+    <span class="accent">Prioritized.</span>
+  </h1>
+  <p class="hero-sub">
+    Four phases, 18 features, one clear path from working MVP to premium music product. Click any card to expand the full implementation guide, stack choices, and code scaffolding.
+  </p>
+
+  <!-- SUPABASE BANNER -->
+  <div class="supabase-banner">
+    <div class="banner-icon">🐘</div>
+    <div class="banner-content">
+      <div class="banner-title">Recommendation: Migrate to Supabase (ditch Firestore)</div>
+      <div class="banner-body">
+        PostgreSQL is far better for music app data. You can do <code>JOIN songs ON playlists.song_ids</code>, run aggregated play-count queries, and structure relational <code>listen_events</code> natively. Firestore's document model gets painful fast with filtering and sorting across collections. Use <code>supabase_flutter</code> + <code>supabase_auth_ui</code> — auth, storage, and realtime all included. Your existing <code>SongModel.fromMap()</code> just needs the field names updated.
+        <div><span class="banner-tag">✅ STRONG RECOMMENDATION</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS ROW -->
+<div class="stats-row">
+  <div class="stat"><div class="stat-num yellow">18</div><div class="stat-label">Total Features</div></div>
+  <div class="stat"><div class="stat-num yellow">6</div><div class="stat-label">Must-Have Now</div></div>
+  <div class="stat"><div class="stat-num green">4</div><div class="stat-label">Phases</div></div>
+  <div class="stat"><div class="stat-num cyan">~0%</div><div class="stat-label" id="pct-label">Shipped</div></div>
+  <div class="stat"><div class="stat-num purple">supabase_flutter</div><div class="stat-label">Recommended DB Package</div></div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <span class="control-label">Phase:</span>
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="phase" data-phase="1">① Core</button>
+  <button class="filter-btn" data-filter="phase" data-phase="2">② Social</button>
+  <button class="filter-btn" data-filter="phase" data-phase="3">③ ML & Audio</button>
+  <button class="filter-btn" data-filter="phase" data-phase="4">④ Premium</button>
+  <div class="divider"></div>
+  <span class="control-label">Priority:</span>
+  <button class="filter-btn" data-filter="priority" data-priority="must">Must-Have</button>
+  <button class="filter-btn" data-filter="priority" data-priority="high">High</button>
+  <button class="filter-btn" data-filter="priority" data-priority="nice">Nice-to-Have</button>
+  <button class="expand-all-btn" id="expandAllBtn">Expand All ▼</button>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar-wrap">
+  <div class="progress-label">Overall Shipping Progress (mark cards done to track)</div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- NO RESULTS -->
+  <div class="no-results" id="noResults">
+    <h3>( ˘ ³˘)</h3>
+    <p>No features match this filter. Try another.</p>
+  </div>
+
+  <!-- ━━━━ PHASE 1 ━━━━ -->
+  <section class="phase-section phase-1" data-phase="1" id="phase1">
+    <div class="phase-header">
+      <div class="phase-num">01</div>
+      <div class="phase-info">
+        <div class="phase-name">Core — Build Now</div>
+        <div class="phase-desc">Foundation layer. None of the social or ML features make sense without a working playback system with real data. These 6 features unlock everything else.</div>
+      </div>
+      <div class="phase-tag">🔴 Priority 1</div>
+    </div>
+    <div class="cards-grid" id="phase1-grid">
+
+      <!-- SUPABASE / DB INTEGRATION -->
+      <div class="card" data-phase="1" data-priority="must" id="card-db">
+        <div class="card-header" onclick="toggleCard('card-db')">
+          <div class="card-icon">🗄️</div>
+          <div class="card-meta">
+            <div class="card-title">Supabase DB Integration</div>
+            <div class="card-subtitle">Replace mock songs with real PostgreSQL queries via Supabase</div>
+            <div class="card-badges">
+              <span class="badge badge-must">Must-Have</span>
+              <span class="badge badge-new">Was: Firestore</span>
+              <span class="badge badge-db">Supabase</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="supabase-note">💡 <span>This replaces the original "Firestore Integration" task. Supabase gives you relational queries, which you'll need for genre filtering, play counts, and ML later.</span></div>
+            <div class="impl-section">
+              <div class="impl-label">Packages to add</div>
+              <div class="packages-row">
+                <span class="badge badge-pkg">supabase_flutter</span>
+                <span class="badge badge-pkg">supabase_auth_ui</span>
+              </div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">Supabase Schema (SQL)</div>
+              <div class="code-block">-- songs table
+CREATE TABLE songs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  artist TEXT NOT NULL,
+  album TEXT,
+  genre TEXT,
+  audio_url TEXT NOT NULL,
+  cover_url TEXT NOT NULL,
+  duration_ms INT,
+  play_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- listen_events (start logging DAY ONE!)
+CREATE TABLE listen_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  uid UUID REFERENCES auth.users(id),
+  song_id UUID REFERENCES songs(id),
+  duration_listened_ms INT,
+  listened_at TIMESTAMPTZ DEFAULT now()
+);</div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">Steps</div>
+              <ul class="impl-list">
+                <li>Run <code>flutter pub add supabase_flutter</code> and init in <code>main.dart</code></li>
+                <li>Replace <code>AuthService</code> — swap <code>firebase_auth</code> for <code>supabase.auth</code></li>
+                <li>Replace <code>getMockSongs()</code> in <code>MusicService</code> with a <code>supabase.from('songs').select()</code> call</li>
+                <li>Update <code>SongModel.fromMap()</code> to match Supabase column names (snake_case)</li>
+                <li>Move audio/cover files from Firebase Storage to Supabase Storage buckets</li>
+              </ul>
+            </div>
+            <div class="warning-note">⚠️ <span><strong>Log listen_events from Day 1.</strong> This is your ML training data. You can't retroactively collect it. Add a <code>_logListenEvent()</code> call inside <code>playSong()</code> immediately.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIBRARY SCREEN -->
+      <div class="card" data-phase="1" data-priority="must" id="card-library">
+        <div class="card-header" onclick="toggleCard('card-library')">
+          <div class="card-icon">📚</div>
+          <div class="card-meta">
+            <div class="card-title">Library Screen</div>
+            <div class="card-subtitle">Playlists, Liked Songs, Recently Played — full CRUD</div>
+            <div class="card-badges">
+              <span class="badge badge-must">Must-Have</span>
+              <span class="badge badge-db">Supabase RLS</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Schema additions</div>
+              <div class="code-block">CREATE TABLE playlists (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id UUID REFERENCES auth.users(id),
+  title TEXT NOT NULL,
+  cover_url TEXT,
+  is_public BOOLEAN DEFAULT false
+);
+
+CREATE TABLE playlist_songs (
+  playlist_id UUID REFERENCES playlists(id),
+  song_id UUID REFERENCES songs(id),
+  position INT,
+  PRIMARY KEY (playlist_id, song_id)
+);
+
+CREATE TABLE liked_songs (
+  uid UUID REFERENCES auth.users(id),
+  song_id UUID REFERENCES songs(id),
+  liked_at TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (uid, song_id)
+);</div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">What to build</div>
+              <ul class="impl-list">
+                <li>Replace Library tab placeholder with a real screen in <code>MainWrapper</code></li>
+                <li>3 sections: Liked Songs, Your Playlists, Recently Played</li>
+                <li>Bottom sheet for "Create Playlist" with name + optional cover</li>
+                <li>Long-press song card → "Add to Playlist" / "Like" context menu</li>
+                <li>Swipe-to-delete on playlist items</li>
+                <li>Heart icon on song cards and MiniPlayer that updates <code>liked_songs</code></li>
+              </ul>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">State</div>
+              <ul class="impl-list">
+                <li>Add <code>likedSongsProvider</code> — StreamProvider watching Supabase realtime on <code>liked_songs</code></li>
+                <li>Add <code>userPlaylistsProvider</code> — StreamProvider on <code>playlists</code> for current user</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAY QUEUE & PREV/NEXT -->
+      <div class="card" data-phase="1" data-priority="must" id="card-queue">
+        <div class="card-header" onclick="toggleCard('card-queue')">
+          <div class="card-icon">🎶</div>
+          <div class="card-meta">
+            <div class="card-title">Play Queue & Prev / Next</div>
+            <div class="card-subtitle">Load playlists into a queue. Real skip, shuffle, repeat.</div>
+            <div class="card-badges">
+              <span class="badge badge-must">Must-Have</span>
+              <span class="badge badge-pkg">just_audio</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Key idea</div>
+              <ul class="impl-list">
+                <li>Replace single <code>AudioSource.uri()</code> with a <code>ConcatenatingAudioSource</code> playlist</li>
+                <li><code>player.seekToNext()</code> and <code>player.seekToPrevious()</code> handle skip natively</li>
+                <li><code>player.setShuffleModeEnabled(true)</code> for shuffle</li>
+                <li><code>player.setLoopMode(LoopMode.all / one)</code> for repeat</li>
+              </ul>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">Refactor in MusicService</div>
+              <div class="code-block">// Replace playSong() with playQueue()
+Future&lt;void&gt; playQueue(
+  List&lt;SongModel&gt; songs,
+  int startIndex,
+  WidgetRef ref,
+) async {
+  final playlist = ConcatenatingAudioSource(
+    children: songs.map((s) => AudioSource.uri(
+      Uri.parse(s.audioUrl),
+      tag: MediaItem(id: s.id, title: s.title, artist: s.artist),
+    )).toList(),
+  );
+  await player.setAudioSource(playlist, initialIndex: startIndex);
+  await player.play();
+}</div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">New providers needed</div>
+              <ul class="impl-list">
+                <li><code>queueProvider</code> — holds the current <code>List&lt;SongModel&gt;</code></li>
+                <li><code>currentIndexProvider</code> — watches <code>player.currentIndexStream</code></li>
+                <li>Remove <code>currentSongProvider</code> — derive it from queue + index instead</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS SCREEN -->
+      <div class="card" data-phase="1" data-priority="must" id="card-settings">
+        <div class="card-header" onclick="toggleCard('card-settings')">
+          <div class="card-icon">⚙️</div>
+          <div class="card-meta">
+            <div class="card-title">Settings Screen</div>
+            <div class="card-subtitle">Logout, audio quality, cache management, notif prefs</div>
+            <div class="card-badges">
+              <span class="badge badge-must">Must-Have</span>
+              <span class="badge badge-pkg">shared_preferences</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Sections to build</div>
+              <ul class="impl-list">
+                <li><strong>Account</strong> — display name, email, profile pic (Supabase Storage avatar upload)</li>
+                <li><strong>Audio Quality</strong> — toggle between 128kbps and 320kbps URLs; store in <code>SharedPreferences</code></li>
+                <li><strong>Storage</strong> — show cached file sizes; "Clear Cache" button deletes local just_audio cache</li>
+                <li><strong>Notifications</strong> — toggle for new releases and social activity</li>
+                <li><strong>Appearance</strong> — Dark/Light mode switch (add <code>darkTheme</code> to <code>AppTheme</code>)</li>
+                <li><strong>Danger Zone</strong> — Sign Out, Delete Account (calls Supabase auth.admin.deleteUser)</li>
+              </ul>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">State</div>
+              <ul class="impl-list">
+                <li>Add <code>settingsProvider</code> backed by <code>SharedPreferences</code></li>
+                <li>Add <code>themeModeProvider</code> watched by <code>MyApp</code> to switch between <code>AppTheme.lightTheme</code> and <code>AppTheme.darkTheme</code></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH & DISCOVERY -->
+      <div class="card" data-phase="1" data-priority="must" id="card-search">
+        <div class="card-header" onclick="toggleCard('card-search')">
+          <div class="card-icon">🔍</div>
+          <div class="card-meta">
+            <div class="card-title">Search & Discovery</div>
+            <div class="card-subtitle">Full-text search, genre chips, trending section</div>
+            <div class="card-badges">
+              <span class="badge badge-must">Must-Have</span>
+              <span class="badge badge-db">Supabase FTS</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Supabase Full-Text Search setup</div>
+              <div class="code-block">-- Add full-text search index
+ALTER TABLE songs
+ADD COLUMN fts TSVECTOR
+  GENERATED ALWAYS AS (
+    to_tsvector('english', title || ' ' || artist || ' ' || COALESCE(album,''))
+  ) STORED;
+
+CREATE INDEX songs_fts_idx ON songs USING GIN (fts);
+
+-- Query from Flutter:
+-- supabase.from('songs')
+--   .select()
+--   .textSearch('fts', query, config: 'english')</div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">What to build</div>
+              <ul class="impl-list">
+                <li>Add a "Search" tab to <code>MainWrapper</code> bottom nav (replace or add a 4th tab)</li>
+                <li>Debounced search input (300ms) using a <code>StateProvider&lt;String&gt;</code></li>
+                <li>Genre chip row: "Hip-Hop", "Electronic", "Chill", "Workout" — filters by genre column</li>
+                <li>Trending section: <code>songs.order('play_count', ascending: false).limit(10)</code></li>
+                <li>Empty state illustration and loading shimmer</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OFFLINE CACHING -->
+      <div class="card" data-phase="1" data-priority="high" id="card-offline">
+        <div class="card-header" onclick="toggleCard('card-offline')">
+          <div class="card-icon">📥</div>
+          <div class="card-meta">
+            <div class="card-title">Offline Mode & Caching</div>
+            <div class="card-subtitle">Download songs for offline play. Cache indicator on cards.</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-pkg">just_audio cache</span>
+              <span class="badge badge-pkg">path_provider</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Approach</div>
+              <ul class="impl-list">
+                <li>Use <code>LockCachingAudioSource</code> from <code>just_audio</code> — it auto-caches while streaming</li>
+                <li>For explicit downloads: use <code>http</code> + <code>path_provider</code> to save MP3 to app documents dir</li>
+                <li>Store download metadata in a local <code>Hive</code> or <code>SharedPreferences</code> map <code>{songId: localPath}</code></li>
+                <li>On <code>playSong()</code>, check if local file exists — if yes, use <code>AudioSource.file()</code> instead of URI</li>
+              </ul>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">UI changes</div>
+              <ul class="impl-list">
+                <li>Add a download icon to song list cards. Animate to a checkmark when cached.</li>
+                <li>In Settings → Storage: show total MB used, list downloaded songs, allow individual delete</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MINI PLAYER UPGRADE -->
+      <div class="card" data-phase="1" data-priority="high" id="card-miniplayer">
+        <div class="card-header" onclick="toggleCard('card-miniplayer')">
+          <div class="card-icon">🎛️</div>
+          <div class="card-meta">
+            <div class="card-title">Mini Player Upgrade</div>
+            <div class="card-subtitle">Progress bar, like button, queue peek, swipe gestures</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-pkg">animations</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Upgrades to mini_player.dart</div>
+              <ul class="impl-list">
+                <li>Add a thin progress bar (LinearProgressIndicator) at the very top edge of the MiniPlayer card</li>
+                <li>Add a heart icon that reads from and writes to <code>likedSongsProvider</code></li>
+                <li>Add swipe-right on album art → next track; swipe-left → previous</li>
+                <li>Pull-down on the full PlayerScreen dismisses it (replace <code>Navigator.pop</code> with <code>DraggableScrollableSheet</code>)</li>
+                <li>Add a subtle "queue count" badge showing songs remaining</li>
+              </ul>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">Consider</div>
+              <ul class="impl-list">
+                <li>Use <code>GestureDetector.onHorizontalDragEnd</code> with velocity threshold for swipe-to-skip</li>
+                <li>Wrap PlayerScreen in a <code>PageView</code> for swipeable transitions between songs</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ━━━━ PHASE 2 ━━━━ -->
+  <section class="phase-section phase-2" data-phase="2" id="phase2">
+    <div class="phase-header">
+      <div class="phase-num">02</div>
+      <div class="phase-info">
+        <div class="phase-name">Social — Build Next</div>
+        <div class="phase-desc">This turns a music player into a <em>product</em>. Collaborative playlists and sharing create the viral loop that retains users.</div>
+      </div>
+      <div class="phase-tag">🟡 Priority 2</div>
+    </div>
+    <div class="cards-grid" id="phase2-grid">
+
+      <!-- USER PROFILES -->
+      <div class="card" data-phase="2" data-priority="high" id="card-profiles">
+        <div class="card-header" onclick="toggleCard('card-profiles')">
+          <div class="card-icon">👤</div>
+          <div class="card-meta">
+            <div class="card-title">User Profiles & Following</div>
+            <div class="card-subtitle">Public pages, follow graph, activity feed</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-db">Supabase RLS</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Schema</div>
+              <div class="code-block">CREATE TABLE profiles (
+  id UUID REFERENCES auth.users(id) PRIMARY KEY,
+  username TEXT UNIQUE,
+  display_name TEXT,
+  avatar_url TEXT,
+  bio TEXT
+);
+
+CREATE TABLE follows (
+  follower_id UUID REFERENCES profiles(id),
+  following_id UUID REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (follower_id, following_id)
+);</div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">What to build</div>
+              <ul class="impl-list">
+                <li>Profile screen: avatar, username, follower/following counts, public playlists</li>
+                <li>Follow button that upserts/deletes rows in <code>follows</code></li>
+                <li>Activity feed: query <code>listen_events</code> joined with <code>follows</code> — "Friends recently listened to…"</li>
+                <li>Use Supabase Realtime to stream new activity into the feed live</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLLABORATIVE PLAYLISTS -->
+      <div class="card" data-phase="2" data-priority="high" id="card-collab">
+        <div class="card-header" onclick="toggleCard('card-collab')">
+          <div class="card-icon">🤝</div>
+          <div class="card-meta">
+            <div class="card-title">Collaborative Playlists</div>
+            <div class="card-subtitle">Real-time co-editing with live presence cursors</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-db">Supabase Realtime</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">How it works with Supabase</div>
+              <ul class="impl-list">
+                <li>Add <code>collaborators</code> table: <code>playlist_id + user_id + role (owner/editor)</code></li>
+                <li>Use <code>supabase.channel('playlist-{id}').onPresence()</code> to track who's viewing</li>
+                <li>Subscribe to <code>playlist_songs</code> table changes with <code>.onPostgresChanges()</code></li>
+                <li>Inserting or removing songs triggers realtime events to all collaborators instantly</li>
+              </ul>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">UI</div>
+              <ul class="impl-list">
+                <li>Show avatar bubbles at top of playlist for who's currently viewing</li>
+                <li>Highlight newly added songs with a pulse animation</li>
+                <li>"Invite" button generates a deep link (Phase 2 feature below)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHARE & DEEP LINKS -->
+      <div class="card" data-phase="2" data-priority="high" id="card-share">
+        <div class="card-header" onclick="toggleCard('card-share')">
+          <div class="card-icon">🔗</div>
+          <div class="card-meta">
+            <div class="card-title">Share & Deep Links</div>
+            <div class="card-subtitle">Share songs/playlists; 30-sec preview snippet generator</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-pkg">app_links</span>
+              <span class="badge badge-pkg">share_plus</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Implementation</div>
+              <ul class="impl-list">
+                <li>Use Supabase Edge Functions to generate shareable short URLs (e.g. <code>retrobeats.app/s/songId</code>)</li>
+                <li>Handle incoming links with <code>app_links</code> package — navigate to song/playlist on open</li>
+                <li>30-sec snippet: seek audio to 30s mark, record using platform channels or pre-clip on server</li>
+                <li><code>share_plus</code> for native share sheet on iOS and Android</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LISTENING STORIES -->
+      <div class="card" data-phase="2" data-priority="nice" id="card-stories">
+        <div class="card-header" onclick="toggleCard('card-stories')">
+          <div class="card-icon">📻</div>
+          <div class="card-meta">
+            <div class="card-title">Listening Stories</div>
+            <div class="card-subtitle">Instagram-style "now playing" stories for your followers</div>
+            <div class="card-badges">
+              <span class="badge badge-nice">Nice-to-Have</span>
+              <span class="badge badge-db">Supabase Realtime</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Implementation</div>
+              <ul class="impl-list">
+                <li>On <code>playSong()</code>, upsert a <code>now_playing</code> table row with <code>{uid, song_id, started_at}</code></li>
+                <li>Auto-expire entries after 30 min using a Supabase Edge Function cron</li>
+                <li>Home screen shows avatar circles of friends currently listening (tap to listen along)</li>
+                <li>"Listen Along" syncs your playback position to a friend's using Realtime broadcast</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ━━━━ PHASE 3 ━━━━ -->
+  <section class="phase-section phase-3" data-phase="3" id="phase3">
+    <div class="phase-header">
+      <div class="phase-num">03</div>
+      <div class="phase-info">
+        <div class="phase-name">ML & Audio — Invest Here</div>
+        <div class="phase-desc">The features that feel like magic. Start simple with collaborative filtering — don't touch matrix factorization until you have 10k+ listen events.</div>
+      </div>
+      <div class="phase-tag">🟣 Priority 3</div>
+    </div>
+    <div class="cards-grid" id="phase3-grid">
+
+      <!-- ML RECOMMENDATIONS -->
+      <div class="card" data-phase="3" data-priority="high" id="card-ml">
+        <div class="card-header" onclick="toggleCard('card-ml')">
+          <div class="card-icon">🧠</div>
+          <div class="card-meta">
+            <div class="card-title">ML Recommendations</div>
+            <div class="card-subtitle">Collaborative filtering → "Discover Weekly" auto-playlist</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-db">listen_events required!</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="warning-note">⚠️ <span>This only works if you've been logging <code>listen_events</code> since Phase 1. Don't skip that step!</span></div>
+            <div class="impl-section">
+              <div class="impl-label">Start simple — Collaborative Filter (SQL)</div>
+              <div class="code-block">-- "Users who liked what you liked also liked..."
+SELECT s.*, COUNT(*) as overlap_score
+FROM liked_songs ls1
+JOIN liked_songs ls2 ON ls1.uid != ls2.uid
+  AND ls1.song_id = ls2.song_id     -- shared taste
+JOIN liked_songs ls3 ON ls3.uid = ls2.uid
+  AND ls3.song_id NOT IN (
+    SELECT song_id FROM liked_songs WHERE uid = $current_user
+  )
+JOIN songs s ON s.id = ls3.song_id
+WHERE ls1.uid = $current_user
+GROUP BY s.id
+ORDER BY overlap_score DESC
+LIMIT 20;</div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">Scaling up later</div>
+              <ul class="impl-list">
+                <li>Run the query as a Supabase Edge Function on a daily cron, cache results in a <code>recommendations</code> table</li>
+                <li>When you have 10k+ events, export to Python, use <code>implicit</code> library for ALS matrix factorization</li>
+                <li>"Discover Weekly" playlist: auto-generated every Monday, shown on Home screen</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOOD RADIO -->
+      <div class="card" data-phase="3" data-priority="high" id="card-mood">
+        <div class="card-header" onclick="toggleCard('card-mood')">
+          <div class="card-icon">🌊</div>
+          <div class="card-meta">
+            <div class="card-title">Mood-Based Radio</div>
+            <div class="card-subtitle">Select mood → infinite radio station. BPM + energy matching.</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-db">Supabase</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Schema addition</div>
+              <div class="code-block">ALTER TABLE songs ADD COLUMN bpm INT;
+ALTER TABLE songs ADD COLUMN energy FLOAT; -- 0.0 to 1.0
+ALTER TABLE songs ADD COLUMN mood TEXT;    -- 'chill','hype','sad','focus'
+
+-- Query for a mood station:
+SELECT * FROM songs
+WHERE mood = $mood
+ORDER BY RANDOM() LIMIT 50;</div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">Implementation</div>
+              <ul class="impl-list">
+                <li>Add mood picker UI to Home screen (horizontal emoji chip row)</li>
+                <li>Load 50 songs matching mood → queue them → auto-append more as queue depletes</li>
+                <li>For BPM/energy analysis: use a Python script + <code>librosa</code> to analyze audio at upload time, store metadata in Supabase</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYNCED LYRICS -->
+      <div class="card" data-phase="3" data-priority="high" id="card-lyrics">
+        <div class="card-header" onclick="toggleCard('card-lyrics')">
+          <div class="card-icon">🎤</div>
+          <div class="card-meta">
+            <div class="card-title">Synced Lyrics</div>
+            <div class="card-subtitle">Real-time scrolling lyrics. Tap a line to seek.</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-pkg">lrc parser</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">LRC Format (store in Supabase)</div>
+              <div class="code-block">-- Add to songs table:
+ALTER TABLE songs ADD COLUMN lyrics_lrc TEXT;
+
+-- LRC file format stored as text:
+-- [00:12.00] First lyric line here
+-- [00:17.20] Second lyric line
+-- [00:22.10] Third lyric line</div>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">Implementation</div>
+              <ul class="impl-list">
+                <li>Parse LRC text into <code>List&lt;LyricLine&gt;</code> (timestamp + text) on load</li>
+                <li>Use <code>positionProvider</code> stream to find the current line (binary search on timestamps)</li>
+                <li>Auto-scroll a <code>ListView</code> to center the current line with <code>Scrollable.ensureVisible</code></li>
+                <li>Tap any line → <code>player.seek(line.timestamp)</code></li>
+                <li>Toggle button on PlayerScreen between album art view and lyrics view</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUTO-DJ CROSSFADE -->
+      <div class="card" data-phase="3" data-priority="nice" id="card-crossfade">
+        <div class="card-header" onclick="toggleCard('card-crossfade')">
+          <div class="card-icon">🎚️</div>
+          <div class="card-meta">
+            <div class="card-title">Auto-DJ Crossfade</div>
+            <div class="card-subtitle">Seamless crossfade between tracks, silence detection</div>
+            <div class="card-badges">
+              <span class="badge badge-nice">Nice-to-Have</span>
+              <span class="badge badge-pkg">just_audio</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Implementation</div>
+              <ul class="impl-list">
+                <li>Listen to <code>player.positionStream</code> — when within 5s of track end, fade out volume while starting next track</li>
+                <li>Use <code>player.setVolume()</code> with a tween animation over 3-5 seconds</li>
+                <li>Silence detection: store <code>silence_start_ms</code> per song in Supabase (pre-calculated at upload)</li>
+                <li>Expose a "Crossfade duration" slider in Settings (3s, 5s, 8s)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIO VISUALIZER -->
+      <div class="card" data-phase="3" data-priority="nice" id="card-viz">
+        <div class="card-header" onclick="toggleCard('card-viz')">
+          <div class="card-icon">📊</div>
+          <div class="card-meta">
+            <div class="card-title">Audio Visualizer</div>
+            <div class="card-subtitle">FFT bars / waveform that pulses to music on the player screen</div>
+            <div class="card-badges">
+              <span class="badge badge-nice">Nice-to-Have</span>
+              <span class="badge badge-pkg">audio_waveforms</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Implementation</div>
+              <ul class="impl-list">
+                <li>Use <code>audio_waveforms</code> package — it provides a <code>WaveformExtractor</code> that pre-processes audio files</li>
+                <li>Render with <code>CustomPainter</code> — draw N vertical bars whose heights map to frequency band amplitudes</li>
+                <li>Animate using <code>AnimationController</code> at 60fps, interpolating between FFT frames</li>
+                <li>Apply the neobrutalism aesthetic: solid-color bars with black borders, no anti-aliasing blur</li>
+                <li>For real FFT: requires platform channel to native audio buffer — use <code>flutter_audio_capture</code> as a fallback</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ━━━━ PHASE 4 ━━━━ -->
+  <section class="phase-section phase-4" data-phase="4" id="phase4">
+    <div class="phase-header">
+      <div class="phase-num">04</div>
+      <div class="phase-info">
+        <div class="phase-name">Premium — Monetize & Polish</div>
+        <div class="phase-desc">Revenue and platform polish. RevenueCat simplifies IAP dramatically. CarPlay and spatial audio unlock the premium listener segment.</div>
+      </div>
+      <div class="phase-tag">🟠 Priority 4</div>
+    </div>
+    <div class="cards-grid" id="phase4-grid">
+
+      <!-- SUBSCRIPTION -->
+      <div class="card" data-phase="4" data-priority="high" id="card-sub">
+        <div class="card-header" onclick="toggleCard('card-sub')">
+          <div class="card-icon">💳</div>
+          <div class="card-meta">
+            <div class="card-title">Subscription & Paywall</div>
+            <div class="card-subtitle">Free (128kbps, ads) vs Premium (320kbps, offline). IAP flow.</div>
+            <div class="card-badges">
+              <span class="badge badge-high">High Priority</span>
+              <span class="badge badge-pkg">purchases_flutter</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Stack: RevenueCat</div>
+              <ul class="impl-list">
+                <li>Add <code>purchases_flutter</code> (RevenueCat SDK) — abstracts StoreKit and Play Billing</li>
+                <li>Define products in App Store Connect + Google Play Console (monthly / annual)</li>
+                <li>Call <code>Purchases.purchasePackage()</code> on paywall CTA tap</li>
+                <li>Use <code>Purchases.getCustomerInfo()</code> to check entitlement on app start</li>
+                <li>Store entitlement status in a <code>subscriptionProvider</code> — gate offline downloads, 320kbps URLs, ad-free behind it</li>
+              </ul>
+            </div>
+            <div class="impl-section">
+              <div class="impl-label">Paywall UI</div>
+              <ul class="impl-list">
+                <li>Full-screen neobrutalist paywall with feature comparison table</li>
+                <li>Use <code>RevenueCat Paywalls</code> SDK for A/B testable paywall templates</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PODCAST SUPPORT -->
+      <div class="card" data-phase="4" data-priority="nice" id="card-podcast">
+        <div class="card-header" onclick="toggleCard('card-podcast')">
+          <div class="card-icon">🎙️</div>
+          <div class="card-meta">
+            <div class="card-title">Podcast Support</div>
+            <div class="card-subtitle">RSS-based feed, chapter markers, speed control, sleep timer</div>
+            <div class="card-badges">
+              <span class="badge badge-nice">Nice-to-Have</span>
+              <span class="badge badge-pkg">webfeed</span>
+              <span class="badge badge-pkg">just_audio</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Implementation</div>
+              <ul class="impl-list">
+                <li>Use <code>webfeed</code> package to parse RSS/Atom podcast feeds</li>
+                <li>Store subscribed podcast URLs in Supabase <code>podcast_subscriptions</code> table</li>
+                <li>Playback speed: <code>player.setSpeed(1.5)</code> — expose a speed picker (0.5x–2.0x)</li>
+                <li>Sleep timer: <code>Future.delayed()</code> → <code>player.pause()</code>. Show countdown in mini player.</li>
+                <li>Chapter markers: parse from podcast RSS <code>&lt;psc:chapters&gt;</code> and show in seek bar</li>
+                <li>Save playback position per episode in Supabase or SharedPreferences</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARPLAY -->
+      <div class="card" data-phase="4" data-priority="nice" id="card-carplay">
+        <div class="card-header" onclick="toggleCard('card-carplay')">
+          <div class="card-icon">🚗</div>
+          <div class="card-meta">
+            <div class="card-title">CarPlay & Android Auto</div>
+            <div class="card-subtitle">Lock-screen & car dashboard via just_audio_background</div>
+            <div class="card-badges">
+              <span class="badge badge-nice">Future</span>
+              <span class="badge badge-pkg">just_audio_background</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Implementation</div>
+              <ul class="impl-list">
+                <li><code>just_audio_background</code> already handles Android Auto media browser service — ensure <code>MediaItem</code> tags are populated correctly</li>
+                <li>For CarPlay (iOS): requires native Swift/Objective-C <code>MPPlayableContentDataSource</code> implementation via a platform channel</li>
+                <li>Register your app as an audio app in <code>Info.plist</code> (<code>UIBackgroundModes: audio</code>) — likely already done</li>
+                <li>Test with iOS Simulator CarPlay window and Android Emulator with DHU</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SPATIAL AUDIO -->
+      <div class="card" data-phase="4" data-priority="nice" id="card-spatial">
+        <div class="card-header" onclick="toggleCard('card-spatial')">
+          <div class="card-icon">🔊</div>
+          <div class="card-meta">
+            <div class="card-title">Spatial / Lossless Audio</div>
+            <div class="card-subtitle">Dolby Atmos and Apple Lossless for compatible content</div>
+            <div class="card-badges">
+              <span class="badge badge-nice">Future</span>
+            </div>
+          </div>
+          <div class="card-chevron">▼</div>
+        </div>
+        <div class="card-body">
+          <div class="card-body-inner">
+            <div class="impl-section">
+              <div class="impl-label">Notes</div>
+              <ul class="impl-list">
+                <li>Store lossless variants (FLAC/ALAC) in Supabase Storage alongside MP3s</li>
+                <li>Gate behind Premium subscription entitlement check</li>
+                <li>Spatial audio (Dolby Atmos) requires <code>.ec3</code>/<code>.ac3</code> format — platform support varies; iOS 14+ supports it natively</li>
+                <li>For practical MVP: just offer FLAC download option for Premium users as a first step</li>
+                <li>Add <code>audio_format</code> column to <code>songs</code> table: <code>'mp3' | 'flac' | 'alac' | 'atmos'</code></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- STICKY TIP -->
+<div class="sticky-tip" id="stickyTip">
+  <button class="sticky-close" onclick="document.getElementById('stickyTip').classList.add('hidden')">×</button>
+  <div class="sticky-tip-title">⚡ Critical Reminder</div>
+  Start logging <code>listen_events</code> to Supabase <strong>immediately</strong> — before anything else in Phase 1. You can't collect historical data retroactively, and it's the foundation of Phase 3 ML.
+</div>
+
+<script>
+  // ── CARD TOGGLE ──
+  function toggleCard(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('expanded');
+  }
+
+  // ── FILTER LOGIC ──
+  let activePhase = 'all';
+  let activePriority = null;
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const filterType = this.dataset.filter;
+
+      if (filterType === 'all') {
+        activePhase = 'all';
+        activePriority = null;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      } else if (filterType === 'phase') {
+        const phaseVal = this.dataset.phase;
+        document.querySelectorAll('[data-filter="all"], [data-filter="phase"], [data-filter="priority"]').forEach(b => b.classList.remove('active'));
+        if (activePhase === phaseVal) {
+          activePhase = 'all';
+          document.querySelector('[data-filter="all"]').classList.add('active');
+        } else {
+          activePhase = phaseVal;
+          activePriority = null;
+          this.classList.add('active');
+        }
+      } else if (filterType === 'priority') {
+        const prioVal = this.dataset.priority;
+        document.querySelectorAll('[data-filter="all"], [data-filter="phase"], [data-filter="priority"]').forEach(b => b.classList.remove('active'));
+        if (activePriority === prioVal) {
+          activePriority = null;
+          activePhase = 'all';
+          document.querySelector('[data-filter="all"]').classList.add('active');
+        } else {
+          activePriority = prioVal;
+          activePhase = 'all';
+          this.classList.add('active');
+        }
+      }
+
+      applyFilters();
+    });
+  });
+
+  function applyFilters() {
+    let visibleCards = 0;
+
+    document.querySelectorAll('.phase-section').forEach(section => {
+      const sectionPhase = section.dataset.phase;
+      let sectionHasVisible = false;
+
+      section.querySelectorAll('.card').forEach(card => {
+        const cardPhase = card.dataset.phase;
+        const cardPriority = card.dataset.priority;
+
+        let show = true;
+        if (activePhase !== 'all' && cardPhase !== activePhase) show = false;
+        if (activePriority && cardPriority !== activePriority) show = false;
+
+        card.style.display = show ? '' : 'none';
+        if (show) { sectionHasVisible = true; visibleCards++; }
+      });
+
+      section.classList.toggle('hidden', !sectionHasVisible);
+    });
+
+    document.getElementById('noResults').classList.toggle('visible', visibleCards === 0);
+  }
+
+  // ── EXPAND ALL ──
+  let allExpanded = false;
+  document.getElementById('expandAllBtn').addEventListener('click', function() {
+    allExpanded = !allExpanded;
+    document.querySelectorAll('.card').forEach(card => {
+      if (card.style.display !== 'none') {
+        card.classList.toggle('expanded', allExpanded);
+      }
+    });
+    this.textContent = allExpanded ? 'Collapse All ▲' : 'Expand All ▼';
+  });
+
+  // ── PROGRESS TRACKING ──
+  const totalCards = document.querySelectorAll('.card').length;
+  let doneCount = 0;
+
+  document.querySelectorAll('.card-title').forEach(title => {
+    title.addEventListener('dblclick', function(e) {
+      e.stopPropagation();
+      const card = this.closest('.card');
+      const isDone = card.classList.toggle('done');
+      doneCount += isDone ? 1 : -1;
+      if (doneCount < 0) doneCount = 0;
+      const pct = Math.round((doneCount / totalCards) * 100);
+      document.getElementById('progressFill').style.width = Math.max(pct, 2) + '%';
+      document.querySelector('#pct-label').textContent = 'Shipped';
+      document.querySelector('.stat-num.cyan').textContent = pct + '%';
+      if (isDone) {
+        card.style.opacity = '0.6';
+        card.querySelector('.card-title').style.textDecoration = 'line-through';
+      } else {
+        card.style.opacity = '';
+        card.querySelector('.card-title').style.textDecoration = '';
+      }
+    });
+  });
+
+  // ── STICKY TIP auto-hide after 8s ──
+  setTimeout(() => {
+    document.getElementById('stickyTip').classList.add('hidden');
+  }, 8000);
+</script>
+</body>
+</html>

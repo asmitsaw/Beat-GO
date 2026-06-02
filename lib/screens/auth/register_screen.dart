@@ -14,64 +14,56 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController          = TextEditingController();
+  final _passwordController       = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _register() async {
-    final email = _emailController.text.trim();
+    final email    = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
-    
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
+    final confirm  = _confirmPasswordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty || confirm.isEmpty) {
+      _snack('Please fill all fields');
       return;
     }
-
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
+    if (password != confirm) {
+      _snack('Passwords do not match');
+      return;
+    }
+    if (password.length < 6) {
+      _snack('Password must be at least 6 characters');
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      await ref.read(authServiceProvider).createUserWithEmailAndPassword(email, password);
-      if (mounted) {
-        Navigator.pop(context); // Go back to login or let router handle it
-      }
+      await ref
+          .read(authServiceProvider)
+          .createUserWithEmailAndPassword(email, password);
+      if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
+      if (mounted) _snack('Sign-up failed: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _signInWithGoogle() async {
+  Future<void> _googleSignIn() async {
     setState(() => _isLoading = true);
     try {
       await ref.read(authServiceProvider).signInWithGoogle();
-      if (mounted) {
-        Navigator.pop(context);
-      }
+      if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
+      if (mounted) _snack('Google sign-in failed: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  void _snack(String msg) => ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(msg)));
 
   @override
   void dispose() {
@@ -85,86 +77,74 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('JOIN US'),
-      ),
+      appBar: AppBar(title: const Text('JOIN US')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 32),
-              NeoTextField(
-                controller: _emailController,
-                hintText: 'Email',
-                keyboardType: TextInputType.emailAddress,
-              ),
               const SizedBox(height: 16),
               NeoTextField(
-                controller: _passwordController,
-                hintText: 'Password',
-                obscureText: true,
-              ),
+                  controller: _emailController,
+                  hintText: 'Email',
+                  keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 16),
               NeoTextField(
-                controller: _confirmPasswordController,
-                hintText: 'Confirm Password',
-                obscureText: true,
-              ),
+                  controller: _passwordController,
+                  hintText: 'Password',
+                  obscureText: true),
+              const SizedBox(height: 16),
+              NeoTextField(
+                  controller: _confirmPasswordController,
+                  hintText: 'Confirm Password',
+                  obscureText: true),
               const SizedBox(height: 32),
+
               NeoButton(
                 onPressed: _isLoading ? () {} : _register,
                 color: AppColors.green,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: _isLoading 
-                    ? const CircularProgressIndicator(color: AppColors.textPrimary)
-                    : const Text('SIGN UP'),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(
+                          color: AppColors.textPrimary, strokeWidth: 2.5)
+                      : const Text('SIGN UP',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1)),
                 ),
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: NeoButton(
-                      onPressed: _isLoading ? () {} : _signInWithGoogle,
-                      color: Colors.white,
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                        child: Text(
-                          'Google',
-                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                        ),
-                      ),
+              const SizedBox(height: 12),
+
+              Row(children: [
+                Expanded(
+                  child: NeoButton(
+                    onPressed: _isLoading ? () {} : _googleSignIn,
+                    color: Colors.white,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      child: Text('Google',
+                          style: TextStyle(
+                              color: Colors.black, fontWeight: FontWeight.bold)),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: NeoButton(
-                      onPressed: _isLoading
-                          ? () {}
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const PhoneAuthScreen(),
-                                ),
-                              );
-                            },
-                      color: AppColors.purple,
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                        child: Text(
-                          'Phone',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: NeoButton(
+                    onPressed: () => Navigator.push(context,
+                        MaterialPageRoute(
+                            builder: (_) => const PhoneAuthScreen())),
+                    color: AppColors.purple,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      child: Text('Phone',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ]),
             ],
           ),
         ),

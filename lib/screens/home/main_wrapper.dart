@@ -5,6 +5,9 @@ import '../../theme/app_colors.dart';
 import '../../services/music_service.dart';
 import '../../widgets/mini_player.dart';
 import 'home_screen.dart';
+import '../library/library_screen.dart';
+import '../search/search_screen.dart';
+import '../settings/settings_screen.dart';
 
 class MainWrapper extends ConsumerStatefulWidget {
   const MainWrapper({super.key});
@@ -16,57 +19,53 @@ class MainWrapper extends ConsumerStatefulWidget {
 class _MainWrapperState extends ConsumerState<MainWrapper> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const Scaffold(body: Center(child: Text("Library Placeholder", style: TextStyle(fontWeight: FontWeight.bold)))),
-    const Scaffold(body: Center(child: Text("Settings Placeholder", style: TextStyle(fontWeight: FontWeight.bold)))),
+  static const _screens = [
+    HomeScreen(),
+    SearchScreen(),
+    LibraryScreen(),
+    SettingsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     final currentSong = ref.watch(currentSongProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           _screens[_currentIndex],
+          // Mini player floats above bottom nav
           if (currentSong != null)
-            const Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16, // Space for bottom nav
-              child: MiniPlayer(),
+            Positioned(
+              left: 12, right: 12,
+              bottom: 80, // above the nav bar height
+              child: const MiniPlayer(),
             ),
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: AppColors.border, width: 3),
+            top: BorderSide(
+              color: isDark ? Colors.white24 : AppColors.border,
+              width: 3,
+            ),
           ),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          backgroundColor: AppColors.yellow,
-          selectedItemColor: AppColors.textPrimary,
-          unselectedItemColor: AppColors.textSecondary,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          onTap: (index) => setState(() => _currentIndex = index),
+          type: BottomNavigationBarType.fixed,
+          onTap: (i) => setState(() => _currentIndex = i),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.home),
-              label: 'Discover',
-            ),
+                icon: Icon(LucideIcons.home), label: 'Discover'),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.library),
-              label: 'Library',
-            ),
+                icon: Icon(LucideIcons.search), label: 'Search'),
             BottomNavigationBarItem(
-              icon: Icon(LucideIcons.settings),
-              label: 'Settings',
-            ),
+                icon: Icon(LucideIcons.library), label: 'Library'),
+            BottomNavigationBarItem(
+                icon: Icon(LucideIcons.settings), label: 'Settings'),
           ],
         ),
       ),

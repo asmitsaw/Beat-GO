@@ -1,100 +1,71 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import '../core/supabase_client.dart';
 
-final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService(FirebaseAuth.instance);
-});
+// ── Providers ──────────────────────────────────────────────────────────────
+final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
+/// Emits the current Supabase User on every auth state change.
 final authStateProvider = StreamProvider<User?>((ref) {
-  return ref.watch(authServiceProvider).authStateChanges;
+  return supabase.auth.onAuthStateChange.map((event) => event.session?.user);
 });
 
+// ── Service ────────────────────────────────────────────────────────────────
 class AuthService {
-  final FirebaseAuth _auth;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  /// Stored temporarily for Supabase phone OTP verification (requires phone in verify call).
+  String _pendingPhone = '';
 
-  AuthService(this._auth);
-
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  Future<User?> signInWithEmailAndPassword(String email, String password) async {
-    try {
-      final credential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return credential.user;
-    } catch (e) {
-      rethrow;
-    }
+  // ── Email / Password ──
+  Future<User?> signInWithEmailAndPassword(
+      String email, String password) async {
+    final res = await supabase.auth
+        .signInWithPassword(email: email, password: password);
+    return res.user;
   }
 
-  Future<User?> createUserWithEmailAndPassword(String email, String password) async {
-    try {
-      final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return credential.user;
-    } catch (e) {
-      rethrow;
-    }
+  Future<User?> createUserWithEmailAndPassword(
+      String email, String password) async {
+    final res =
+        await supabase.auth.signUp(email: email, password: password);
+    return res.user;
   }
 
-  Future<User?> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null; // The user canceled the sign-in
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final userCredential = await _auth.signInWithCredential(credential);
-      return userCredential.user;
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<void> verifyPhoneNumber({
-    required String phoneNumber,
-    required Function(String verificationId) codeSent,
-    required Function(FirebaseAuthException e) verificationFailed,
-  }) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        await _auth.signInWithCredential(credential);
-      },
-      verificationFailed: verificationFailed,
-      codeSent: (String verificationId, int? resendToken) {
-        codeSent(verificationId);
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {},
+  // ── Google OAuth (redirect-based; works on mobile after URL scheme setup) ──
+  Future<void> signInWithGoogle() async {
+    await supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: 'io.supabase.retrobeats://login-callback',
     );
   }
 
-  Future<User?> signInWithOTP(String verificationId, String smsCode) async {
+  // ── Phone OTP ──
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required void Function(String verificationId) codeSent,
+    required void Function(dynamic error) verificationFailed,
+  }) async {
+    _pendingPhone = phoneNumber;
     try {
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
-      final userCredential = await _auth.signInWithCredential(credential);
-      return userCredential.user;
+      await supabase.auth.signInWithOtp(phone: phoneNumber);
+      codeSent('supabase_otp'); // verificationId is not used by Supabase
     } catch (e) {
-      rethrow;
+      verificationFailed(e);
     }
   }
 
-  Future<void> signOut() async {
-    try {
-      await _googleSignIn.signOut();
-    } catch (_) {}
-    await _auth.signOut();
+  Future<User?> signInWithOTP(
+      String verificationId, String smsCode) async {
+    final res = await supabase.auth.verifyOTP(
+      type: OtpType.sms,
+      token: smsCode,
+      phone: _pendingPhone,
+    );
+    return res.user;
   }
+
+  // ── Sign Out ──
+  Future<void> signOut() async => supabase.auth.signOut();
+
+  User? get currentUser => supabase.auth.currentUser;
+  String? get currentUserId => supabase.auth.currentUser?.id;
 }
