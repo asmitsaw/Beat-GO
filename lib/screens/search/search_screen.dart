@@ -11,8 +11,20 @@ import '../../services/music_service.dart';
 const _genres = ['All', 'Electronic', 'Hip-Hop', 'Pop', 'Rock', 'Jazz', 'Chill', 'Workout'];
 
 // ── Providers ──────────────────────────────────────────────────────────────
-final _searchQueryProvider    = StateProvider<String>((ref) => '');
-final _selectedGenreProvider  = StateProvider<String>((ref) => 'All');
+class _SearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+  void set(String v) => state = v;
+}
+
+class _SelectedGenreNotifier extends Notifier<String> {
+  @override
+  String build() => 'All';
+  void set(String v) => state = v;
+}
+
+final _searchQueryProvider   = NotifierProvider<_SearchQueryNotifier, String>(_SearchQueryNotifier.new);
+final _selectedGenreProvider = NotifierProvider<_SelectedGenreNotifier, String>(_SelectedGenreNotifier.new);
 
 final _searchResultsProvider = FutureProvider<List<SongModel>>((ref) async {
   final query = ref.watch(_searchQueryProvider);
@@ -44,7 +56,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _ctrl.addListener(() {
       // Debounce by using the state directly (provider rebuilds)
       Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) ref.read(_searchQueryProvider.notifier).state = _ctrl.text.trim();
+        if (mounted) ref.read(_searchQueryProvider.notifier).set(_ctrl.text.trim());
       });
     });
   }
@@ -88,7 +100,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               return GestureDetector(
                 onTap: () => ref
                     .read(_selectedGenreProvider.notifier)
-                    .state = genre,
+                    .set(genre),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(
