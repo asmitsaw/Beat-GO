@@ -129,9 +129,8 @@ class MiniPlayer extends ConsumerWidget {
                     ),
                     onPressed: () async {
                       await ref
-                          .read(playlistServiceProvider)
-                          .toggleLike(currentSong.id, isLiked);
-                      ref.invalidate(likedSongIdsProvider);
+                          .read(likedSongsProvider.notifier)
+                          .toggleLike(currentSong);
                     },
                   ),
 

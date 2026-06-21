@@ -118,3 +118,25 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_user_preferences_updated_at
   BEFORE UPDATE ON public.user_preferences
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ── 6. Migration to Support JioSaavn Songs (Alters UUID columns to TEXT) ──
+-- Run this in your Supabase SQL Editor to support liking and history logging
+-- for JioSaavn songs (which use alphanumeric string IDs instead of UUIDs).
+
+/*
+  -- Drop foreign key constraints first
+  ALTER TABLE public.playlist_songs DROP CONSTRAINT IF EXISTS playlist_songs_song_id_fkey;
+  ALTER TABLE public.liked_songs DROP CONSTRAINT IF EXISTS liked_songs_song_id_fkey;
+  ALTER TABLE public.listen_events DROP CONSTRAINT IF EXISTS listen_events_song_id_fkey;
+
+  -- Alter column types from UUID to TEXT
+  ALTER TABLE public.songs ALTER COLUMN id TYPE TEXT;
+  ALTER TABLE public.playlist_songs ALTER COLUMN song_id TYPE TEXT;
+  ALTER TABLE public.liked_songs ALTER COLUMN song_id TYPE TEXT;
+  ALTER TABLE public.listen_events ALTER COLUMN song_id TYPE TEXT;
+
+  -- Recreate foreign key constraints referencing public.songs(id)
+  ALTER TABLE public.playlist_songs ADD CONSTRAINT playlist_songs_song_id_fkey FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
+  ALTER TABLE public.liked_songs ADD CONSTRAINT liked_songs_song_id_fkey FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
+  ALTER TABLE public.listen_events ADD CONSTRAINT listen_events_song_id_fkey FOREIGN KEY (song_id) REFERENCES public.songs(id) ON DELETE CASCADE;
+*/

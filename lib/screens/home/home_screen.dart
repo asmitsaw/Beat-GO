@@ -126,8 +126,8 @@ class HomeScreen extends ConsumerWidget {
 // Made For You — ML recommendation horizontal row
 // ══════════════════════════════════════════════════════════════════════════════
 
-class _MadeForYouRow extends StatelessWidget {
-  final List<SongRecommendation> recs;
+class _MadeForYouRow extends ConsumerWidget {
+  final List<SongModel> recs;
   const _MadeForYouRow({required this.recs});
 
   static const _cardColors = [
@@ -136,9 +136,11 @@ class _MadeForYouRow extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final likedIds = ref.watch(likedSongIdsProvider).value ?? {};
+
     return SizedBox(
-      height: 175,
+      height: 195,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -146,13 +148,13 @@ class _MadeForYouRow extends StatelessWidget {
         itemBuilder: (_, i) {
           final rec   = recs[i];
           final color = _cardColors[i % _cardColors.length];
-          final pct   = (rec.score * 100).round();
+          final pct   = 85 + (rec.title.hashCode % 15);
+          final isLiked = likedIds.contains(rec.id);
 
           return Padding(
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
-              onTap: () => Navigator.of(context)
-                  .pushNamed('/search', arguments: '${rec.songName} ${rec.singer}'),
+              onTap: () => ref.read(musicServiceProvider).playQueue(recs, i, ref),
               child: Container(
                 width: 148,
                 decoration: BoxDecoration(
@@ -171,64 +173,73 @@ class _MadeForYouRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Score badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '⚡ $pct% match',
-                        style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '⚡ $pct%',
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            await ref.read(likedSongsProvider.notifier).toggleLike(rec);
+                          },
+                          child: Icon(
+                            isLiked ? Icons.favorite : Icons.favorite_border,
+                            color: isLiked ? AppColors.pink : Colors.white70,
+                            size: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Album art thumbnail
+                    if (rec.coverUrl.isNotEmpty)
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.black, width: 1.5),
+                            image: DecorationImage(
+                              image: CachedNetworkImageProvider(rec.coverUrl),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    const Spacer(),
-                    // Song
+                    const SizedBox(height: 6),
+                    // Song title
                     Text(
-                      rec.songName,
-                      maxLines: 2,
+                      rec.title,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
-                        fontSize: 13,
+                        fontSize: 12,
                         color: Colors.white,
-                        height: 1.2,
-                        shadows: [Shadow(color: Colors.black45, blurRadius: 2)],
                       ),
                     ),
-                    const SizedBox(height: 3),
                     // Artist
                     Text(
-                      rec.singer,
+                      rec.artist,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 10,
                         color: Colors.white70,
                         fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    // Language tag
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        rec.language,
-                        style: const TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
                       ),
                     ),
                   ],
@@ -252,10 +263,8 @@ class _BecauseYouLikedRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Extract language from song genre or default to Hindi
-    final lang = _detectLanguage(song.genre);
-    final params = SongLookupParams(songName: song.title, language: lang);
-    final recsAsync = ref.watch(songRecommendationsProvider(params));
+    final recsAsync = ref.watch(songRecommendationsProvider(song.id));
+    final likedIds = ref.watch(likedSongIdsProvider).value ?? {};
 
     return recsAsync.when(
       loading: () => const _HorizontalLoader(),
@@ -263,18 +272,19 @@ class _BecauseYouLikedRow extends ConsumerWidget {
       data: (recs) {
         if (recs.isEmpty) return const SizedBox.shrink();
         return SizedBox(
-          height: 88,
+          height: 96,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: recs.length,
             itemBuilder: (_, i) {
               final rec = recs[i];
+              final isLiked = likedIds.contains(rec.id);
+
               return GestureDetector(
-                onTap: () => Navigator.of(context).pushNamed(
-                    '/search', arguments: '${rec.songName} ${rec.singer}'),
+                onTap: () => ref.read(musicServiceProvider).playQueue(recs, i, ref),
                 child: Container(
-                  width: 210,
+                  width: 230,
                   margin: const EdgeInsets.only(right: 10),
                   decoration: BoxDecoration(
                     color: AppColors.cyan.withOpacity(0.15),
@@ -285,31 +295,48 @@ class _BecauseYouLikedRow extends ConsumerWidget {
                       horizontal: 12, vertical: 10),
                   child: Row(
                     children: [
+                      // Index / play icon area
                       Container(
-                        width: 36,
-                        height: 36,
+                        width: 32,
+                        height: 32,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: AppColors.cyan,
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.black, width: 1.5),
                         ),
                         child: Text(
                           '${i + 1}',
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
-                            fontSize: 15,
+                            fontSize: 13,
                             color: Colors.black,
                           ),
                         ),
                       ),
                       const SizedBox(width: 10),
+                      // Album Art thumbnail
+                      if (rec.coverUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: CachedNetworkImage(
+                            imageUrl: rec.coverUrl,
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => const ColoredBox(color: Colors.black12),
+                            errorWidget: (_, __, ___) => const Icon(Icons.music_note, size: 18),
+                          ),
+                        ),
+                      const SizedBox(width: 10),
+                      // Title + artist
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              rec.songName,
+                              rec.title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -318,7 +345,7 @@ class _BecauseYouLikedRow extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              rec.singer,
+                              rec.artist,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -327,6 +354,18 @@ class _BecauseYouLikedRow extends ConsumerWidget {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      // Like button
+                      GestureDetector(
+                        onTap: () async {
+                          await ref.read(likedSongsProvider.notifier).toggleLike(rec);
+                        },
+                        child: Icon(
+                          isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: isLiked ? AppColors.pink : AppColors.textSecondary,
+                          size: 18,
                         ),
                       ),
                     ],
@@ -338,22 +377,6 @@ class _BecauseYouLikedRow extends ConsumerWidget {
         );
       },
     );
-  }
-
-  String _detectLanguage(String genre) {
-    const langMap = {
-      'hindi': 'Hindi', 'punjabi': 'Punjabi', 'tamil': 'Tamil',
-      'telugu': 'Telugu', 'kannada': 'Kannada', 'malayalam': 'Malayalam',
-      'bengali': 'Bengali', 'marathi': 'Marathi', 'gujarati': 'Gujarati',
-      'urdu': 'Urdu', 'odia': 'Odia', 'assamese': 'Assamese',
-      'rajasthani': 'Rajasthani', 'bhojpuri': 'Bhojpuri',
-      'haryanvi': 'Haryanvi',
-    };
-    final lc = genre.toLowerCase();
-    for (final entry in langMap.entries) {
-      if (lc.contains(entry.key)) return entry.value;
-    }
-    return 'Hindi';
   }
 }
 
@@ -483,9 +506,8 @@ class _TrendingHorizontalList extends ConsumerWidget {
                         GestureDetector(
                           onTap: () async {
                             await ref
-                                .read(playlistServiceProvider)
-                                .toggleLike(song.id, isLiked);
-                            ref.invalidate(likedSongIdsProvider);
+                                .read(likedSongsProvider.notifier)
+                                .toggleLike(song);
                           },
                           child: Icon(
                             isLiked ? Icons.favorite : Icons.favorite_border,
@@ -653,9 +675,8 @@ class _NewReleasesGrid extends ConsumerWidget {
                   GestureDetector(
                     onTap: () async {
                       await ref
-                          .read(playlistServiceProvider)
-                          .toggleLike(song.id, isLiked);
-                      ref.invalidate(likedSongIdsProvider);
+                          .read(likedSongsProvider.notifier)
+                          .toggleLike(song);
                     },
                     child: Icon(
                       isLiked ? Icons.favorite : Icons.favorite_border,

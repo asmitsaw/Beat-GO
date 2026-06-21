@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/supabase_client.dart';
 import '../models/user_preferences_model.dart';
+import '../models/song_model.dart';
+import 'saavn_service.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // RecommendationsService
@@ -208,6 +210,66 @@ class RecommendationsService {
       }
     } catch (_) {}
     return [];
+  }
+
+  /// Fetch proper recommendations from JioSaavn based on user preferences.
+  /// Returns a list of playable [SongModel] objects.
+  Future<List<SongModel>> getProperSaavnRecommendations({int limit = 20}) async {
+    final prefs = await getUserPreferences();
+    final saavn = SaavnService();
+
+    final results = <SongModel>[];
+    final seenIds = <String>{};
+
+    // 1. Preferred singers
+    if (prefs.singers.isNotEmpty) {
+      for (final singer in prefs.singers.take(3)) {
+        try {
+          final songs = await saavn.searchSongs(singer, limit: 6);
+          for (final s in songs) {
+            if (seenIds.add(s.id)) {
+              results.add(s);
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 2. Preferred languages
+    if (prefs.languages.isNotEmpty) {
+      for (final lang in prefs.languages.take(3)) {
+        try {
+          final songs = await saavn.searchSongs('top $lang songs 2025', limit: 6);
+          for (final s in songs) {
+            if (seenIds.add(s.id)) {
+              results.add(s);
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 3. Fallback: trending songs
+    if (results.isEmpty) {
+      try {
+        final trending = await saavn.getTrendingSongs(limit: limit);
+        results.addAll(trending);
+      } catch (_) {}
+    }
+
+    results.shuffle();
+    return results.take(limit).toList();
+  }
+
+  /// Fetch trending songs for a specific language from JioSaavn.
+  Future<List<SongModel>> getLanguageSaavnRecommendations(String language, {int limit = 10}) async {
+    try {
+      final saavn = SaavnService();
+      final songs = await saavn.searchSongs('trending $language', limit: limit);
+      return songs;
+    } catch (_) {
+      return [];
+    }
   }
 }
 

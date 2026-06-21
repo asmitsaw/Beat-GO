@@ -318,13 +318,11 @@ class AlbumScreen extends ConsumerWidget {
                             ),
                           ),
 
-                          // Like
                           GestureDetector(
                             onTap: () async {
                               await ref
-                                  .read(playlistServiceProvider)
-                                  .toggleLike(song.id, isLiked);
-                              ref.invalidate(likedSongIdsProvider);
+                                  .read(likedSongsProvider.notifier)
+                                  .toggleLike(song);
                             },
                             child: Icon(
                               isLiked ? Icons.favorite : Icons.favorite_border,

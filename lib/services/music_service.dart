@@ -137,7 +137,24 @@ class MusicService {
 
   /// Fetch song suggestions from JioSaavn (for radio-mode queue extension).
   Future<List<SongModel>> fetchSuggestions(String songId) async {
-    return SaavnService().getSongSuggestions(songId, limit: 10);
+    try {
+      if (songId.contains('-') || songId.length > 20) {
+        // Likely a UUID or database ID, not a JioSaavn ID
+        return await SaavnService().getTrendingSongs(limit: 10);
+      }
+      final suggestions = await SaavnService().getSongSuggestions(songId, limit: 10);
+      if (suggestions.isEmpty) {
+        return await SaavnService().getTrendingSongs(limit: 10);
+      }
+      return suggestions;
+    } catch (e) {
+      debugPrint('Error fetching suggestions for $songId: $e. Falling back to trending.');
+      try {
+        return await SaavnService().getTrendingSongs(limit: 10);
+      } catch (_) {
+        return [];
+      }
+    }
   }
 
   // ── Queue-based playback ──────────────────────────────────────────────────
@@ -166,11 +183,6 @@ class MusicService {
       await player.setAudioSource(playlist,
           initialIndex: startIndex.clamp(0, songs.length - 1));
       await player.play();
-      _logListenEvent(songs[startIndex].id);
-      _incrementPlayCount(songs[startIndex].id);
-      // Track in recently played
-      RecentlyPlayedService().addSong(songs[startIndex]).catchError((_) {});
-      ref.invalidate(recentlyPlayedProvider);
     } catch (e) {
       debugPrint('playQueue error: $e');
     }
@@ -211,7 +223,7 @@ class MusicService {
     debugPrint('Index changed to $idx');
   }
 
-  void _logListenEvent(String songId) {
+  void logListenEvent(String songId) {
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) return;
     supabase.from('listen_events').insert({
@@ -221,7 +233,7 @@ class MusicService {
     }).then((_) {}).catchError((e) { debugPrint('listen_event log error: $e'); return null; });
   }
 
-  void _incrementPlayCount(String songId) {
+  void incrementPlayCount(String songId) {
     supabase.rpc('increment_play_count', params: {'song_id': songId})
         .then((_) {})
         .catchError((_) {}); // non-critical
@@ -234,6 +246,13 @@ class MusicService {
 void debugPrint(String msg) => print(msg);
 
 // ── Autoplay / Continuous Play Mode ──────────────────────────────────────────
+class LastAutoplaySongIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void update(String? val) => state = val;
+}
+final lastAutoplaySongIdProvider = NotifierProvider<LastAutoplaySongIdNotifier, String?>(LastAutoplaySongIdNotifier.new);
+
 final autoplayProvider = Provider<void>((ref) {
   final indexAsync = ref.watch(currentIndexProvider);
   final queue = ref.watch(queueProvider);
@@ -241,18 +260,22 @@ final autoplayProvider = Provider<void>((ref) {
   indexAsync.whenData((index) async {
     if (index == null || queue.isEmpty) return;
 
-    // Trigger suggestions fetch when we play the last song in the queue
-    if (index == queue.length - 1) {
-      final lastSong = queue[index];
-      debugPrint('Autoplay: Reached last song in queue: ${lastSong.title}. Fetching suggestions...');
+    // If we are near the end of the queue (within 2 songs from the end)
+    if (queue.length - 1 - index <= 1) {
+      final lastSong = queue.last;
+
+      // Avoid double fetching suggestions for the same last song
+      final lastFetchedId = ref.read(lastAutoplaySongIdProvider);
+      if (lastFetchedId == lastSong.id) return;
+
+      ref.read(lastAutoplaySongIdProvider.notifier).update(lastSong.id);
+      debugPrint('Autoplay: Near end of queue (index: $index, total: ${queue.length}). Fetching suggestions for ${lastSong.title}...');
 
       try {
         final suggestions = await ref.read(musicServiceProvider).fetchSuggestions(lastSong.id);
         
         final currentQueue = ref.read(queueProvider);
-        if (suggestions.isNotEmpty && 
-            currentQueue.length == queue.length && 
-            currentQueue.last.id == lastSong.id) {
+        if (suggestions.isNotEmpty && currentQueue.last.id == lastSong.id) {
           
           // 1. Update Riverpod queue state
           final updatedQueue = [...currentQueue, ...suggestions];
@@ -279,7 +302,45 @@ final autoplayProvider = Provider<void>((ref) {
         }
       } catch (e) {
         debugPrint('Autoplay error: $e');
+        // Reset so we can retry on failure
+        if (ref.read(lastAutoplaySongIdProvider) == lastSong.id) {
+          ref.read(lastAutoplaySongIdProvider.notifier).update(null);
+        }
       }
     }
+  });
+});
+
+// ── Song Changed Side-Effects (History & Stats) ──────────────────────────────
+class LastLoggedSongIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void update(String? val) => state = val;
+}
+final lastLoggedSongIdProvider = NotifierProvider<LastLoggedSongIdNotifier, String?>(LastLoggedSongIdNotifier.new);
+
+final activeSongChangedProvider = Provider<void>((ref) {
+  final indexAsync = ref.watch(currentIndexProvider);
+  final queue = ref.watch(queueProvider);
+
+  indexAsync.whenData((index) async {
+    if (index == null || queue.isEmpty || index >= queue.length) return;
+    final song = queue[index];
+
+    final lastLoggedId = ref.read(lastLoggedSongIdProvider);
+    if (lastLoggedId == song.id) return;
+
+    ref.read(lastLoggedSongIdProvider.notifier).update(song.id);
+    debugPrint('Song Changed: Active song is now ${song.title} (${song.id})');
+
+    final musicService = ref.read(musicServiceProvider);
+    
+    // Log to Supabase listen_events and increment play count
+    musicService.logListenEvent(song.id);
+    musicService.incrementPlayCount(song.id);
+    
+    // Track in recently played
+    await ref.read(recentlyPlayedServiceProvider).addSong(song);
+    ref.invalidate(recentlyPlayedProvider);
   });
 });

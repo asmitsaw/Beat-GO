@@ -294,13 +294,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                               color: isLiked ? AppColors.pink : AppColors.background,
                               padding: const EdgeInsets.all(10),
                               borderRadius: 40,
-                              child: GestureDetector(
-                                onTap: () async {
-                                  await ref
-                                      .read(playlistServiceProvider)
-                                      .toggleLike(currentSong.id, isLiked);
-                                  ref.invalidate(likedSongIdsProvider);
-                                },
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    await ref
+                                        .read(likedSongsProvider.notifier)
+                                        .toggleLike(currentSong);
+                                  },
                                 child: Icon(
                                   isLiked
                                       ? Icons.favorite_rounded
@@ -889,15 +888,199 @@ class _LyricsSheetState extends State<_LyricsSheet> {
     _fetchLyrics();
   }
 
+  String _cleanLyrics(String rawLyrics) {
+    // Remove LRC timestamps like [00:12.34] or [00:12] or [00:12.345]
+    final regExp = RegExp(r'\[\d{2}:\d{2}(?:\.\d{2,3})?\]');
+    return rawLyrics.replaceAll(regExp, '').trim();
+  }
+
+  String _cleanTitle(String title) {
+    // Remove (From "Movie"), (Remix), [From "Movie"], (feat. ...), (with ...), (Single Version), etc.
+    var cleaned = title.replaceAll(RegExp(r'\([^)]*\)'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'\[[^\]]*\]'), '');
+    // Remove " - Single", " - EP", " - Remix", etc.
+    cleaned = cleaned.split(' - ').first;
+    return cleaned.trim();
+  }
+
+  String _cleanArtist(String artist) {
+    // Take only the first artist before comma, feat., &, and
+    var cleaned = artist.split(RegExp(r',|&|feat\.|\b(?:and)\b', caseSensitive: false)).first;
+    return cleaned.trim();
+  }
+
   Future<void> _fetchLyrics() async {
     try {
-      final artist = Uri.encodeComponent(widget.song.artist);
-      final title  = Uri.encodeComponent(widget.song.title);
-      final url    = Uri.parse('https://api.lyrics.ovh/v1/$artist/$title');
-      final res    = await _doFetch(url);
-      if (mounted) setState(() { _lyrics = res; _loading = false; });
+      final rawTitle = widget.song.title;
+      final rawArtist = widget.song.artist;
+      final album = widget.song.album;
+      final durationSec = (widget.song.durationMs / 1000).round();
+
+      final title = _cleanTitle(rawTitle);
+      final artist = _cleanArtist(rawArtist);
+
+      debugPrint('Fetching lyrics for cleaned title: "$title", cleaned artist: "$artist"');
+
+      // 1. Try LRCLIB /api/get (exact matching with duration)
+      try {
+        final queryParams = {
+          'track_name': title,
+          'artist_name': artist,
+          if (album.isNotEmpty) 'album_name': album,
+          if (durationSec > 0) 'duration': durationSec.toString(),
+        };
+        final uri = Uri.parse('https://lrclib.net/api/get').replace(queryParameters: queryParams);
+        final response = await http.get(uri, headers: {
+          'User-Agent': 'RetroBeats/1.0.0 (https://github.com/asmitsaw/Beat-GO-)'
+        }).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          final lyrics = (data['syncedLyrics'] as String?)?.isNotEmpty == true
+              ? data['syncedLyrics'] as String
+              : data['plainLyrics'] as String?;
+          if (lyrics != null && lyrics.isNotEmpty) {
+            if (mounted) {
+              setState(() {
+                _lyrics = _cleanLyrics(lyrics);
+                _loading = false;
+              });
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('LRCLIB get error: $e');
+      }
+
+      // 2. Try LRCLIB /api/get without duration/album (to be less strict)
+      try {
+        final queryParams = {
+          'track_name': title,
+          'artist_name': artist,
+        };
+        final uri = Uri.parse('https://lrclib.net/api/get').replace(queryParameters: queryParams);
+        final response = await http.get(uri, headers: {
+          'User-Agent': 'RetroBeats/1.0.0 (https://github.com/asmitsaw/Beat-GO-)'
+        }).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          final lyrics = (data['syncedLyrics'] as String?)?.isNotEmpty == true
+              ? data['syncedLyrics'] as String
+              : data['plainLyrics'] as String?;
+          if (lyrics != null && lyrics.isNotEmpty) {
+            if (mounted) {
+              setState(() {
+                _lyrics = _cleanLyrics(lyrics);
+                _loading = false;
+              });
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('LRCLIB get (no duration) error: $e');
+      }
+
+      // 3. Try LRCLIB /api/search (fuzzy query with cleaned title + cleaned artist)
+      try {
+        final searchUri = Uri.parse('https://lrclib.net/api/search').replace(queryParameters: {
+          'q': '$title $artist',
+        });
+        final response = await http.get(searchUri, headers: {
+          'User-Agent': 'RetroBeats/1.0.0 (https://github.com/asmitsaw/Beat-GO-)'
+        }).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data is List && data.isNotEmpty) {
+            final bestMatch = data.first as Map<String, dynamic>;
+            final lyrics = (bestMatch['syncedLyrics'] as String?)?.isNotEmpty == true
+                ? bestMatch['syncedLyrics'] as String
+                : bestMatch['plainLyrics'] as String?;
+            if (lyrics != null && lyrics.isNotEmpty) {
+              if (mounted) {
+                setState(() {
+                  _lyrics = _cleanLyrics(lyrics);
+                  _loading = false;
+                });
+                return;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('LRCLIB search error: $e');
+      }
+
+      // 4. Try LRCLIB /api/search with rawTitle + rawArtist
+      try {
+        final searchUri = Uri.parse('https://lrclib.net/api/search').replace(queryParameters: {
+          'q': '$rawTitle $rawArtist',
+        });
+        final response = await http.get(searchUri, headers: {
+          'User-Agent': 'RetroBeats/1.0.0 (https://github.com/asmitsaw/Beat-GO-)'
+        }).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data is List && data.isNotEmpty) {
+            final bestMatch = data.first as Map<String, dynamic>;
+            final lyrics = (bestMatch['syncedLyrics'] as String?)?.isNotEmpty == true
+                ? bestMatch['syncedLyrics'] as String
+                : bestMatch['plainLyrics'] as String?;
+            if (lyrics != null && lyrics.isNotEmpty) {
+              if (mounted) {
+                setState(() {
+                  _lyrics = _cleanLyrics(lyrics);
+                  _loading = false;
+                });
+                return;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('LRCLIB raw search error: $e');
+      }
+
+      // 5. Fallback to lyrics.ovh with cleaned title & artist
+      try {
+        final encodedArtist = Uri.encodeComponent(artist);
+        final encodedTitle  = Uri.encodeComponent(title);
+        final url = Uri.parse('https://api.lyrics.ovh/v1/$encodedArtist/$encodedTitle');
+        final res = await _doFetch(url);
+        if (mounted) {
+          setState(() {
+            _lyrics = _cleanLyrics(res);
+            _loading = false;
+          });
+          return;
+        }
+      } catch (e) {
+        debugPrint('lyrics.ovh cleaned error: $e');
+      }
+
+      // 6. Fallback to lyrics.ovh with raw title & artist
+      final encodedArtist = Uri.encodeComponent(rawArtist);
+      final encodedTitle  = Uri.encodeComponent(rawTitle);
+      final url = Uri.parse('https://api.lyrics.ovh/v1/$encodedArtist/$encodedTitle');
+      final res = await _doFetch(url);
+      if (mounted) {
+        setState(() {
+          _lyrics = _cleanLyrics(res);
+          _loading = false;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { _error = 'Lyrics not found'; _loading = false; });
+      debugPrint('All lyrics fetches failed: $e');
+      if (mounted) {
+        setState(() {
+          _error = 'Lyrics not found';
+          _loading = false;
+        });
+      }
     }
   }
 

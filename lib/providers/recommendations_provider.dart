@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_preferences_model.dart';
+import '../models/song_model.dart';
 import '../services/recommendations_service.dart';
+import '../services/music_service.dart';
 // ══════════════════════════════════════════════════════════════════════════════
 // Onboarding Status
 // ══════════════════════════════════════════════════════════════════════════════
@@ -51,11 +53,11 @@ final userPreferencesProvider =
 // ══════════════════════════════════════════════════════════════════════════════
 
 final forYouRecommendationsProvider =
-    FutureProvider<List<SongRecommendation>>((ref) async {
+    FutureProvider<List<SongModel>>((ref) async {
   final service = ref.read(recommendationsServiceProvider);
   // Re-run when preferences change
   ref.watch(userPreferencesProvider);
-  return service.getForYouRecommendations(limit: 20);
+  return service.getProperSaavnRecommendations(limit: 20);
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -63,38 +65,18 @@ final forYouRecommendationsProvider =
 // ══════════════════════════════════════════════════════════════════════════════
 
 final languageRecommendationsProvider =
-    FutureProvider.family<List<SongRecommendation>, String>((ref, language) async {
+    FutureProvider.family<List<SongModel>, String>((ref, language) async {
   final service = ref.read(recommendationsServiceProvider);
-  return service.getLanguageBasedRecommendations(language, limit: 10);
+  return service.getLanguageSaavnRecommendations(language, limit: 10);
 });
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Because You Liked — recommendations based on a specific song
 // ══════════════════════════════════════════════════════════════════════════════
 
-/// Param class for the family provider
-class SongLookupParams {
-  final String songName;
-  final String language;
-  const SongLookupParams({required this.songName, required this.language});
-
-  @override
-  bool operator ==(Object other) =>
-      other is SongLookupParams &&
-      other.songName == songName &&
-      other.language == language;
-
-  @override
-  int get hashCode => Object.hash(songName, language);
-}
-
 final songRecommendationsProvider =
-    FutureProvider.family<List<SongRecommendation>, SongLookupParams>(
-        (ref, params) async {
-  final service = ref.read(recommendationsServiceProvider);
-  return service.getRecommendationsForSong(
-    songName: params.songName,
-    language: params.language,
-    limit: 10,
-  );
+    FutureProvider.family<List<SongModel>, String>((ref, songId) async {
+  final service = ref.read(musicServiceProvider);
+  return service.fetchSuggestions(songId);
 });
