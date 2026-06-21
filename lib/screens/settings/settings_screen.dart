@@ -13,10 +13,10 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(settingsProvider);
-    final settings      = settingsAsync.value;
-    final isDark        = settings?.themeMode == ThemeMode.dark;
-    final quality       = settings?.audioQuality ?? 'standard';
-    final user          = ref.read(authServiceProvider).currentUser;
+    final settings = settingsAsync.value;
+    final isDark = settings?.themeMode == ThemeMode.dark;
+    final quality = settings?.audioQuality ?? 'standard';
+    final user = ref.read(authServiceProvider).currentUser;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -24,19 +24,25 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-
           // ── Account section ──────────────────────────────────────────────
           _sectionLabel('ACCOUNT'),
           NeoBox(
             margin: const EdgeInsets.only(bottom: 16),
-            child: Column(children: [
-              _infoRow(Icons.person_outline, 'Email', user?.email ?? 'Not signed in'),
-              const Divider(height: 1),
-              _infoRow(Icons.fingerprint, 'User ID',
-                  user?.id != null
-                      ? '${user!.id.substring(0, 8)}…'
-                      : 'N/A'),
-            ]),
+            child: Column(
+              children: [
+                _infoRow(
+                  Icons.person_outline,
+                  'Email',
+                  user?.email ?? 'Not signed in',
+                ),
+                const Divider(height: 1),
+                _infoRow(
+                  Icons.fingerprint,
+                  'User ID',
+                  user?.id != null ? '${user!.id.substring(0, 8)}…' : 'N/A',
+                ),
+              ],
+            ),
           ),
 
           // ── Audio quality ─────────────────────────────────────────────────
@@ -44,25 +50,27 @@ class SettingsScreen extends ConsumerWidget {
           NeoBox(
             color: AppColors.yellow,
             margin: const EdgeInsets.only(bottom: 16),
-            child: Column(children: [
-              _qualityOption(
-                label:    'Standard (128 kbps)',
-                subtitle: 'Saves data',
-                selected: quality == 'standard',
-                onTap:    () => ref
-                    .read(settingsProvider.notifier)
-                    .setAudioQuality('standard'),
-              ),
-              const Divider(height: 1, color: Colors.black26),
-              _qualityOption(
-                label:    'High Quality (320 kbps)',
-                subtitle: 'Recommended for headphones',
-                selected: quality == 'high',
-                onTap:    () => ref
-                    .read(settingsProvider.notifier)
-                    .setAudioQuality('high'),
-              ),
-            ]),
+            child: Column(
+              children: [
+                _qualityOption(
+                  label: 'Standard (128 kbps)',
+                  subtitle: 'Saves data',
+                  selected: quality == 'standard',
+                  onTap: () => ref
+                      .read(settingsProvider.notifier)
+                      .setAudioQuality('standard'),
+                ),
+                const Divider(height: 1, color: Colors.black26),
+                _qualityOption(
+                  label: 'High Quality (320 kbps)',
+                  subtitle: 'Recommended for headphones',
+                  selected: quality == 'high',
+                  onTap: () => ref
+                      .read(settingsProvider.notifier)
+                      .setAudioQuality('high'),
+                ),
+              ],
+            ),
           ),
 
           // ── Appearance ────────────────────────────────────────────────────
@@ -70,24 +78,33 @@ class SettingsScreen extends ConsumerWidget {
           NeoBox(
             color: AppColors.purple,
             margin: const EdgeInsets.only(bottom: 16),
-            child: Row(children: [
-              const Icon(Icons.dark_mode_outlined, size: 28, color: Colors.white),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Text('Dark Mode',
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.dark_mode_outlined,
+                  size: 28,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Text(
+                    'Dark Mode',
                     style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white)),
-              ),
-              Switch(
-                value:     isDark,
-                activeColor: AppColors.yellow,
-                onChanged: (v) => ref
-                    .read(settingsProvider.notifier)
-                    .setThemeMode(v ? ThemeMode.dark : ThemeMode.light),
-              ),
-            ]),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: isDark,
+                  activeThumbColor: AppColors.yellow,
+                  onChanged: (v) => ref
+                      .read(settingsProvider.notifier)
+                      .setThemeMode(v ? ThemeMode.dark : ThemeMode.light),
+                ),
+              ],
+            ),
           ),
 
           // ── Storage ───────────────────────────────────────────────────────
@@ -102,18 +119,24 @@ class SettingsScreen extends ConsumerWidget {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: const Text('Sign out?',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: const Text(
+                    'Sign out?',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   actions: [
                     TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel')),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.pink),
+                        backgroundColor: AppColors.pink,
+                      ),
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Sign Out',
-                          style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Sign Out',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
@@ -125,12 +148,15 @@ class SettingsScreen extends ConsumerWidget {
             color: AppColors.pink,
             child: const Padding(
               padding: EdgeInsets.symmetric(vertical: 14),
-              child: Text('SIGN OUT',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                      color: Colors.white,
-                      letterSpacing: 1)),
+              child: Text(
+                'SIGN OUT',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: Colors.white,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 80),
@@ -141,25 +167,34 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _sectionLabel(String label) => Padding(
     padding: const EdgeInsets.only(bottom: 8, left: 2),
-    child: Text(label,
-        style: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 11,
-            letterSpacing: 2,
-            color: AppColors.textSecondary)),
+    child: Text(
+      label,
+      style: const TextStyle(
+        fontWeight: FontWeight.w900,
+        fontSize: 11,
+        letterSpacing: 2,
+        color: AppColors.textSecondary,
+      ),
+    ),
   );
 
   Widget _infoRow(IconData icon, String label, String value) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-    child: Row(children: [
-      Icon(icon, size: 22),
-      const SizedBox(width: 12),
-      Text(label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-      const Spacer(),
-      Text(value,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-    ]),
+    child: Row(
+      children: [
+        Icon(icon, size: 22),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+      ],
+    ),
   );
 
   Widget _qualityOption({
@@ -167,36 +202,42 @@ class SettingsScreen extends ConsumerWidget {
     required String subtitle,
     required bool selected,
     required VoidCallback onTap,
-  }) =>
-      InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-          child: Row(children: [
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+  }) => InkWell(
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      child: Row(
+        children: [
+          Icon(
+            selected ? Icons.radio_button_checked : Icons.radio_button_off,
+            color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: TextStyle(
-                          fontWeight: selected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          fontSize: 14)),
-                  Text(subtitle,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary)),
-                ],
-              ),
-            ),
-          ]),
-        ),
-      );
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ── Storage sub-widget (needs WidgetRef) ───────────────────────────────────
@@ -216,8 +257,7 @@ class _StorageSectionState extends ConsumerState<_StorageSection> {
   }
 
   Future<void> _loadSize() async {
-    final bytes =
-        await ref.read(downloadServiceProvider).getCacheSizeBytes();
+    final bytes = await ref.read(downloadServiceProvider).getCacheSizeBytes();
     if (mounted) setState(() => _cacheBytes = bytes);
   }
 
@@ -231,51 +271,62 @@ class _StorageSectionState extends ConsumerState<_StorageSection> {
     return NeoBox(
       color: AppColors.green,
       margin: const EdgeInsets.only(bottom: 16),
-      child: Column(children: [
-        Row(children: [
-          const Icon(Icons.storage_outlined, size: 26),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Text('Downloaded Songs',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 15)),
-          ),
-          Text(_fmtBytes(_cacheBytes),
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textSecondary)),
-        ]),
-        if (_cacheBytes > 0) ...[
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () async {
-              await ref
-                  .read(downloadServiceProvider)
-                  .clearAll(ref);
-              _loadSize();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Cache cleared!')),
-                );
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color:        AppColors.pink,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.border, width: 2),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.storage_outlined, size: 26),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'Downloaded Songs',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
               ),
-              child: const Text('CLEAR CACHE',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 12)),
-            ),
+              Text(
+                _fmtBytes(_cacheBytes),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
+          if (_cacheBytes > 0) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () async {
+                await ref.read(downloadServiceProvider).clearAll(ref);
+                _loadSize();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Cache cleared!')),
+                  );
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.pink,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.border, width: 2),
+                ),
+                child: const Text(
+                  'CLEAR CACHE',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 }

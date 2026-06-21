@@ -3,6 +3,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/song_model.dart';
 import '../core/supabase_client.dart';
+import 'saavn_service.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PROVIDERS
@@ -63,7 +64,7 @@ final loopModeProvider = StreamProvider<LoopMode>((ref) {
 class MusicService {
   final AudioPlayer player = AudioPlayer();
 
-  // ── Fetch songs from Supabase (with mock fallback) ──────────────────────
+  // ── Fetch songs from Supabase → fall through to JioSaavn if empty ────────
   Future<List<SongModel>> fetchSongs({String? genre, String? query}) async {
     try {
       var q = supabase.from('songs').select();
@@ -77,11 +78,15 @@ class MusicService {
 
       final rows = await q.order('play_count', ascending: false);
       final list = List<Map<String, dynamic>>.from(rows as List);
-      return list.map((r) => SongModel.fromMap(r)).toList();
-    } catch (e) {
-      debugPrint('fetchSongs error: $e — using mock data');
-      return _mockSongs();
+      final songs = list.map((r) => SongModel.fromMap(r)).toList();
+      if (songs.isNotEmpty) return songs;
+    } catch (_) {}
+    // Supabase empty or unavailable — use JioSaavn
+    final saavn = SaavnService();
+    if (query != null && query.isNotEmpty) {
+      return saavn.searchSongs(query);
     }
+    return saavn.getTrendingSongs();
   }
 
   Future<List<SongModel>> fetchTrending({int limit = 10}) async {
@@ -91,12 +96,17 @@ class MusicService {
           .select()
           .order('play_count', ascending: false)
           .limit(limit);
-      return List<Map<String, dynamic>>.from(rows as List)
+      final songs = List<Map<String, dynamic>>.from(rows as List)
           .map((r) => SongModel.fromMap(r))
           .toList();
-    } catch (e) {
-      return _mockSongs();
-    }
+      if (songs.isNotEmpty) return songs;
+    } catch (_) {}
+    return SaavnService().getTrendingSongs(limit: limit);
+  }
+
+  /// Fetch song suggestions from JioSaavn (for radio-mode queue extension).
+  Future<List<SongModel>> fetchSuggestions(String songId) async {
+    return SaavnService().getSongSuggestions(songId, limit: 10);
   }
 
   // ── Queue-based playback ──────────────────────────────────────────────────
@@ -174,7 +184,7 @@ class MusicService {
       'uid':        uid,
       'song_id':    songId,
       'listened_at': DateTime.now().toUtc().toIso8601String(),
-    }).then((_) {}).catchError((e) => debugPrint('listen_event log error: $e'));
+    }).then((_) {}).catchError((e) { debugPrint('listen_event log error: $e'); return null; });
   }
 
   void _incrementPlayCount(String songId) {
@@ -183,42 +193,7 @@ class MusicService {
         .catchError((_) {}); // non-critical
   }
 
-  // ── Mock fallback (used when Supabase table is empty / not yet seeded) ────
-  static List<SongModel> _mockSongs() => [
-        const SongModel(
-          id:       '1',
-          title:    'Synthwave Neon',
-          artist:   'The Midnight Rider',
-          album:    'Neon Dreams',
-          genre:    'Electronic',
-          mood:     'chill',
-          coverUrl: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600&auto=format&fit=crop',
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-          durationMs: 180000,
-        ),
-        const SongModel(
-          id:       '2',
-          title:    'Cyberpunk Drive',
-          artist:   'Vapor Wave',
-          album:    'City Lights',
-          genre:    'Electronic',
-          mood:     'hype',
-          coverUrl: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=600&auto=format&fit=crop',
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-          durationMs: 210000,
-        ),
-        const SongModel(
-          id:       '3',
-          title:    'Arcade Dreams',
-          artist:   'Pixel Pop',
-          album:    '8-Bit Fantasies',
-          genre:    'Electronic',
-          mood:     'hype',
-          coverUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=600&auto=format&fit=crop',
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3',
-          durationMs: 195000,
-        ),
-      ];
+
 }
 
 // ignore: avoid_print

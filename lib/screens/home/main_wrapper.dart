@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_colors.dart';
 import '../../services/music_service.dart';
 import '../../widgets/mini_player.dart';
+import '../../providers/recommendations_provider.dart';
+import '../../screens/onboarding/music_preferences_screen.dart';
 import 'home_screen.dart';
 import '../library/library_screen.dart';
 import '../search/search_screen.dart';
 import '../settings/settings_screen.dart';
+import '../recommendations/recommendations_screen.dart';
 
 class MainWrapper extends ConsumerStatefulWidget {
   const MainWrapper({super.key});
@@ -18,13 +21,40 @@ class MainWrapper extends ConsumerStatefulWidget {
 
 class _MainWrapperState extends ConsumerState<MainWrapper> {
   int _currentIndex = 0;
+  bool _onboardingChecked = false;
 
   static const _screens = [
     HomeScreen(),
     SearchScreen(),
+    RecommendationsScreen(),
     LibraryScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Check onboarding after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOnboarding());
+  }
+
+  Future<void> _checkOnboarding() async {
+    if (_onboardingChecked) return;
+    _onboardingChecked = true;
+
+    final done = await ref.read(onboardingDoneProvider.future);
+    if (!done && mounted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const MusicPreferencesScreen(),
+          fullscreenDialog: true,
+        ),
+      );
+      // Refresh recommendations after onboarding
+      ref.invalidate(userPreferencesProvider);
+      ref.invalidate(forYouRecommendationsProvider);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +92,8 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
                 icon: Icon(LucideIcons.home), label: 'Discover'),
             BottomNavigationBarItem(
                 icon: Icon(LucideIcons.search), label: 'Search'),
+            BottomNavigationBarItem(
+                icon: Icon(LucideIcons.sparkles), label: 'For You'),
             BottomNavigationBarItem(
                 icon: Icon(LucideIcons.library), label: 'Library'),
             BottomNavigationBarItem(

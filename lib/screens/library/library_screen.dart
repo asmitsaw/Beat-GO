@@ -16,7 +16,7 @@ class LibraryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playlistsAsync = ref.watch(userPlaylistsProvider);
-    final likedAsync     = ref.watch(likedSongsProvider);
+    final likedAsync = ref.watch(likedSongsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -29,77 +29,105 @@ class LibraryScreen extends ConsumerWidget {
         },
         child: ListView(
           padding: const EdgeInsets.only(
-              left: 16, right: 16, top: 16, bottom: 120),
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: 120,
+          ),
           children: [
             // ── Liked Songs card ──────────────────────────────────────────
             likedAsync.when(
               loading: () => _skeletonCard(),
-              error:   (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
               data: (songs) => GestureDetector(
                 onTap: () {
                   if (songs.isEmpty) return;
                   ref.read(musicServiceProvider).playQueue(songs, 0, ref);
                 },
                 child: NeoBox(
-                  color:  AppColors.pink,
+                  color: AppColors.pink,
                   margin: const EdgeInsets.only(bottom: 14),
-                  child: Row(children: [
-                    const Icon(Icons.favorite, size: 40, color: Colors.white),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.favorite, size: 40, color: Colors.white),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Liked Songs',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 18,
-                                    color: Colors.white)),
-                            Text('${songs.length} songs',
-                                style: const TextStyle(
-                                    color: Colors.white70, fontSize: 13)),
-                          ]),
-                    ),
-                    const Icon(Icons.play_arrow, color: Colors.white, size: 32),
-                  ]),
+                            const Text(
+                              'Liked Songs',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              '${songs.length} songs',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
 
             // ── Section header ────────────────────────────────────────────
-            Row(children: [
-              const Expanded(
-                child: Text('YOUR PLAYLISTS',
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'YOUR PLAYLISTS',
                     style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                        letterSpacing: 1.5,
-                        color: AppColors.textSecondary)),
-              ),
-              NeoButton(
-                onPressed: () => _showCreatePlaylistDialog(context, ref),
-                color: AppColors.yellow,
-                borderWidth: 2,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Text('+ NEW',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 12)),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                      letterSpacing: 1.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ),
-              ),
-            ]),
+                NeoButton(
+                  onPressed: () => _showCreatePlaylistDialog(context, ref),
+                  color: AppColors.yellow,
+                  borderWidth: 2,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: Text(
+                      '+ NEW',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
 
             // ── Playlists list ────────────────────────────────────────────
             playlistsAsync.when(
               loading: () => _skeletonCard(),
-              error:   (e, _) => Text('Error: $e'),
+              error: (e, _) => Text('Error: $e'),
               data: (playlists) => playlists.isEmpty
                   ? _emptyPlaylists()
                   : Column(
                       children: playlists
                           .map((p) => _PlaylistCard(playlist: p))
-                          .toList()),
+                          .toList(),
+                    ),
             ),
           ],
         ),
@@ -115,14 +143,20 @@ class LibraryScreen extends ConsumerWidget {
 
   Widget _emptyPlaylists() => Padding(
     padding: const EdgeInsets.symmetric(vertical: 32),
-    child: Column(children: const [
-      Text('🎵', style: TextStyle(fontSize: 48)),
-      SizedBox(height: 12),
-      Text('No playlists yet.',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-      Text('Tap + NEW to create one.',
-          style: TextStyle(color: AppColors.textSecondary)),
-    ]),
+    child: Column(
+      children: const [
+        Text('🎵', style: TextStyle(fontSize: 48)),
+        SizedBox(height: 12),
+        Text(
+          'No playlists yet.',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        Text(
+          'Tap + NEW to create one.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+      ],
+    ),
   );
 
   void _showCreatePlaylistDialog(BuildContext context, WidgetRef ref) {
@@ -135,8 +169,10 @@ class LibraryScreen extends ConsumerWidget {
           borderRadius: BorderRadius.circular(8),
           side: const BorderSide(color: AppColors.border, width: 3),
         ),
-        title: const Text('New Playlist',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'New Playlist',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: ctrl,
           autofocus: true,
@@ -160,8 +196,13 @@ class LibraryScreen extends ConsumerWidget {
               }
               if (context.mounted) Navigator.pop(context);
             },
-            child: const Text('Create',
-                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Create',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -192,23 +233,31 @@ class _PlaylistCard extends ConsumerWidget {
       ),
       confirmDismiss: (_) async {
         return await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Delete playlist?',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel')),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.pink),
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Delete',
-                    style: TextStyle(color: Colors.white)),
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text(
+                  'Delete playlist?',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.pink,
+                    ),
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ) ?? false;
+            ) ??
+            false;
       },
       onDismissed: (_) async {
         await ref.read(playlistServiceProvider).deletePlaylist(playlist.id);
@@ -218,46 +267,65 @@ class _PlaylistCard extends ConsumerWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (_) =>
-                  PlaylistDetailScreen(playlist: playlist)),
+            builder: (_) => PlaylistDetailScreen(playlist: playlist),
+          ),
         ),
         child: NeoBox(
           color: AppColors.cyan,
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
-          child: Row(children: [
-            // Cover or placeholder
-            Container(
-              width: 54, height: 54,
-              decoration: BoxDecoration(
-                color: AppColors.purple,
-                border: Border.all(color: AppColors.border, width: 2),
-                borderRadius: BorderRadius.circular(4),
+          child: Row(
+            children: [
+              // Cover or placeholder
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: AppColors.purple,
+                  border: Border.all(color: AppColors.border, width: 2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: playlist.coverUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: CachedNetworkImage(
+                          imageUrl: playlist.coverUrl!,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.queue_music,
+                        color: Colors.white,
+                        size: 28,
+                      ),
               ),
-              child: playlist.coverUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(2),
-                      child: CachedNetworkImage(
-                          imageUrl: playlist.coverUrl!, fit: BoxFit.cover))
-                  : const Icon(Icons.queue_music, color: Colors.white, size: 28),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(playlist.title,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      playlist.title,
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text(playlist.isPublic ? 'Public' : 'Private',
-                      style: const TextStyle(fontSize: 12,
-                          color: AppColors.textSecondary)),
-                ],
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      playlist.isPublic ? 'Public' : 'Private',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.textPrimary),
-          ]),
+              const Icon(Icons.chevron_right, color: AppColors.textPrimary),
+            ],
+          ),
         ),
       ),
     );
