@@ -58,6 +58,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(autoplayProvider);
     final currentSong = ref.watch(currentSongProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

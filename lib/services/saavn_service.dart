@@ -162,6 +162,24 @@ class SaavnService {
     return (data['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
   }
 
+  /// Fetch multiple song details in batch by their IDs.
+  Future<List<SongModel>> getSongsDetails(List<String> songIds) async {
+    if (songIds.isEmpty) return [];
+    try {
+      final data = await _get('/api/songs', {'ids': songIds.join(',')});
+      if (data is List) {
+        return data
+            .cast<Map<String, dynamic>>()
+            .map(songFromJson)
+            .where((s) => s.audioUrl.isNotEmpty)
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('getSongsDetails error: $e');
+    }
+    return [];
+  }
+
   /// Fetch song suggestions (similar songs) for [songId].
   Future<List<SongModel>> getSongSuggestions(
     String songId, {

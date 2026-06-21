@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/song_model.dart';
 import '../core/supabase_client.dart';
 import 'saavn_service.dart';
+import 'recently_played_service.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PROVIDERS
@@ -62,7 +63,37 @@ final loopModeProvider = StreamProvider<LoopMode>((ref) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 class MusicService {
-  final AudioPlayer player = AudioPlayer();
+  final AndroidEqualizer equalizer = AndroidEqualizer();
+  late final AudioPlayer player;
+
+  MusicService() {
+    final pipeline = AudioPipeline(androidAudioEffects: [equalizer]);
+    player = AudioPlayer(audioPipeline: pipeline);
+  }
+
+  Future<void> reorderQueue(int oldIndex, int newIndex, WidgetRef ref) async {
+    final queue = ref.read(queueProvider);
+    if (oldIndex < 0 || oldIndex >= queue.length || newIndex < 0 || newIndex > queue.length) return;
+
+    var targetIndex = newIndex;
+    if (oldIndex < targetIndex) {
+      targetIndex -= 1;
+    }
+
+    final newQueue = List<SongModel>.from(queue);
+    final song = newQueue.removeAt(oldIndex);
+    newQueue.insert(targetIndex, song);
+    ref.read(queueProvider.notifier).setQueue(newQueue);
+
+    if (player.audioSource is ConcatenatingAudioSource) {
+      final source = player.audioSource as ConcatenatingAudioSource;
+      try {
+        await source.move(oldIndex, targetIndex);
+      } catch (e) {
+        debugPrint('Error reordering just_audio playlist: $e');
+      }
+    }
+  }
 
   // ── Fetch songs from Supabase → fall through to JioSaavn if empty ────────
   Future<List<SongModel>> fetchSongs({String? genre, String? query}) async {
@@ -137,6 +168,9 @@ class MusicService {
       await player.play();
       _logListenEvent(songs[startIndex].id);
       _incrementPlayCount(songs[startIndex].id);
+      // Track in recently played
+      RecentlyPlayedService().addSong(songs[startIndex]).catchError((_) {});
+      ref.invalidate(recentlyPlayedProvider);
     } catch (e) {
       debugPrint('playQueue error: $e');
     }
@@ -198,3 +232,54 @@ class MusicService {
 
 // ignore: avoid_print
 void debugPrint(String msg) => print(msg);
+
+// ── Autoplay / Continuous Play Mode ──────────────────────────────────────────
+final autoplayProvider = Provider<void>((ref) {
+  final indexAsync = ref.watch(currentIndexProvider);
+  final queue = ref.watch(queueProvider);
+
+  indexAsync.whenData((index) async {
+    if (index == null || queue.isEmpty) return;
+
+    // Trigger suggestions fetch when we play the last song in the queue
+    if (index == queue.length - 1) {
+      final lastSong = queue[index];
+      debugPrint('Autoplay: Reached last song in queue: ${lastSong.title}. Fetching suggestions...');
+
+      try {
+        final suggestions = await ref.read(musicServiceProvider).fetchSuggestions(lastSong.id);
+        
+        final currentQueue = ref.read(queueProvider);
+        if (suggestions.isNotEmpty && 
+            currentQueue.length == queue.length && 
+            currentQueue.last.id == lastSong.id) {
+          
+          // 1. Update Riverpod queue state
+          final updatedQueue = [...currentQueue, ...suggestions];
+          ref.read(queueProvider.notifier).setQueue(updatedQueue);
+
+          // 2. Append to just_audio's ConcatenatingAudioSource
+          final player = ref.read(musicServiceProvider).player;
+          if (player.audioSource is ConcatenatingAudioSource) {
+            final source = player.audioSource as ConcatenatingAudioSource;
+            final newSources = suggestions.map((s) => AudioSource.uri(
+              Uri.parse(s.audioUrl),
+              tag: MediaItem(
+                id:      s.id,
+                title:   s.title,
+                artist:  s.artist,
+                album:   s.album.isEmpty ? 'Retro Beats' : s.album,
+                artUri:  Uri.tryParse(s.coverUrl),
+              ),
+            )).toList();
+
+            await source.addAll(newSources);
+            debugPrint('Autoplay: Successfully appended ${suggestions.length} songs.');
+          }
+        }
+      } catch (e) {
+        debugPrint('Autoplay error: $e');
+      }
+    }
+  });
+});

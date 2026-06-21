@@ -7,6 +7,7 @@ class NeoTextField extends StatelessWidget {
   final String hintText;
   final bool obscureText;
   final TextInputType? keyboardType;
+  final Widget? suffixIcon;
 
   const NeoTextField({
     super.key,
@@ -14,6 +15,7 @@ class NeoTextField extends StatelessWidget {
     required this.hintText,
     this.obscureText = false,
     this.keyboardType,
+    this.suffixIcon,
   });
 
   @override
@@ -36,6 +38,7 @@ class NeoTextField extends StatelessWidget {
             color: AppColors.textSecondary,
             fontWeight: FontWeight.normal,
           ),
+          suffixIcon: suffixIcon,
         ),
       ),
     );

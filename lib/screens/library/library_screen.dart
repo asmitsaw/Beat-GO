@@ -7,8 +7,8 @@ import '../../components/neo_button.dart';
 import '../../services/music_service.dart';
 import '../../services/playlist_service.dart';
 import '../../models/playlist_model.dart';
-import '../../models/song_model.dart';
 import 'playlist_detail_screen.dart';
+import 'recently_played_screen.dart';
 
 class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
@@ -80,6 +80,51 @@ class LibraryScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+
+            // ── Recently Played card ──────────────────────────────────────
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RecentlyPlayedScreen()),
+              ),
+              child: NeoBox(
+                color: AppColors.cyan,
+                margin: const EdgeInsets.only(bottom: 14),
+                child: Row(
+                  children: [
+                    const Icon(Icons.history, size: 40, color: Colors.white),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Recently Played',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'Your listening history',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ],
                 ),
               ),
             ),

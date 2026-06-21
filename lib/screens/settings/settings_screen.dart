@@ -6,6 +6,7 @@ import '../../components/neo_button.dart';
 import '../../services/auth_service.dart';
 import '../../services/download_service.dart';
 import '../../providers/settings_provider.dart';
+import '../profile/profile_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -24,6 +25,55 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // ── Profile section ──────────────────────────────────────────────
+          GestureDetector(
+            onTap: () {
+              ref.invalidate(profileStatsProvider);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+            child: NeoBox(
+              color: AppColors.cyan,
+              margin: const EdgeInsets.only(bottom: 24),
+              child: Row(
+                children: [
+                  PixelAvatar(email: user?.email ?? 'anonymous', size: 54),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'MY MUSIC PROFILE',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'View Top Tracks & Artists',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           // ── Account section ──────────────────────────────────────────────
           _sectionLabel('ACCOUNT'),
           NeoBox(

@@ -6,6 +6,7 @@ import '../../components/neo_box.dart';
 import '../../components/neo_text_field.dart';
 import '../../models/song_model.dart';
 import '../../services/music_service.dart';
+import '../../services/recently_played_service.dart';
 import '../../providers/saavn_provider.dart';
 import '../album/album_screen.dart';
 
@@ -46,7 +47,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
     _ctrl.addListener(() {
       Future.delayed(const Duration(milliseconds: 350), () {
         if (mounted) {
-          ref.read(_searchQueryProvider.notifier).set(_ctrl.text.trim());
+          final q = _ctrl.text.trim();
+          ref.read(_searchQueryProvider.notifier).set(q);
+          // Save to history when user pauses typing
+          if (q.length > 2) {
+            ref.read(recentlyPlayedServiceProvider).addSearch(q).then((_) {
+              ref.invalidate(searchHistoryProvider);
+            });
+          }
         }
       });
     });
@@ -121,35 +129,219 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 // Tabs
 // ══════════════════════════════════════════════════════════════════════════════
 
-// ── Trending (empty state) ──────────────────────────────────────────────────
+// ── Trending (empty state) + Search History ─────────────────────────────────
 
 class _TrendingTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(saavnTrendingProvider);
-    return async.when(
-      loading: () =>
-          const Center(child: CircularProgressIndicator(color: AppColors.pink)),
-      error: (e, _) => _errorText(e.toString()),
-      data: (songs) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: Text(
-              'TRENDING NOW',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-                letterSpacing: 1.5,
-                color: AppColors.textSecondary,
-              ),
-            ),
+    final historyAsync = ref.watch(searchHistoryProvider);
+    final trendingAsync = ref.watch(saavnTrendingProvider);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+      children: [
+        // Search History
+        historyAsync.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (history) {
+            if (history.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'RECENT SEARCHES',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                        letterSpacing: 1.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        await RecentlyPlayedService().clearSearchHistory();
+                        ref.invalidate(searchHistoryProvider);
+                      },
+                      child: const Text(
+                        'Clear',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.pink,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: history.take(10).map((q) {
+                    return GestureDetector(
+                      onTap: () {
+                        _setSearchQuery(ref, q);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.yellow.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.yellow, width: 2),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.history_rounded,
+                                size: 14, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              q,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+              ],
+            );
+          },
+        ),
+
+        // Recently Played
+        Consumer(
+          builder: (_, ref, __) {
+            final recentAsync = ref.watch(recentlyPlayedProvider);
+            return recentAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (songs) {
+                if (songs.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'RECENTLY PLAYED',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                        letterSpacing: 1.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 80,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: songs.take(15).length,
+                        itemBuilder: (ctx, i) {
+                          final song = songs[i];
+                          return GestureDetector(
+                            onTap: () => ref
+                                .read(musicServiceProvider)
+                                .playQueue(songs, i, ref),
+                            child: Container(
+                              width: 200,
+                              margin: const EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.cyan.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                    color: AppColors.cyan, width: 1.5),
+                              ),
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: CachedNetworkImage(
+                                      imageUrl: song.coverUrl,
+                                      width: 44,
+                                      height: 44,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, __, ___) =>
+                                          const Icon(Icons.music_note),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          song.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        Text(
+                                          song.artist,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+
+        // Trending Now
+        const Text(
+          'TRENDING NOW',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 11,
+            letterSpacing: 1.5,
+            color: AppColors.textSecondary,
           ),
-          Expanded(child: _SongList(songs: songs)),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        trendingAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.pink),
+          ),
+          error: (e, _) => _errorText(e.toString()),
+          data: (songs) => _SongList(songs: songs),
+        ),
+      ],
     );
+  }
+
+  void _setSearchQuery(WidgetRef ref, String q) {
+    ref.read(_searchQueryProvider.notifier).set(q);
   }
 }
 

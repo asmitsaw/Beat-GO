@@ -40,6 +40,7 @@ class SongModel {
   }
 
   Map<String, dynamic> toMap() => {
+        'id':          id,
         'title':       title,
         'artist':      artist,
         'album':       album,
