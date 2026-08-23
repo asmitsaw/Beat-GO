@@ -7,6 +7,8 @@ import '../services/playlist_service.dart';
 import '../components/neo_box.dart';
 import '../screens/player/player_screen.dart';
 
+import '../providers/sync_group_provider.dart';
+
 class MiniPlayer extends ConsumerWidget {
   const MiniPlayer({super.key});
 
@@ -17,6 +19,7 @@ class MiniPlayer extends ConsumerWidget {
     final positionAsync = ref.watch(positionProvider);
     final durationAsync = ref.watch(durationProvider);
     final likedIds = ref.watch(likedSongIdsProvider).value ?? {};
+    final isHost = ref.watch(isSyncHostProvider);
 
     if (currentSong == null) return const SizedBox.shrink();
 
@@ -27,6 +30,31 @@ class MiniPlayer extends ConsumerWidget {
         ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
     final isLiked = likedIds.contains(currentSong.id);
+
+    void togglePlayPause() async {
+      final music = ref.read(musicServiceProvider);
+      if (isPlaying) {
+        await music.pause();
+        if (isHost) {
+          ref.read(syncGroupServiceProvider).broadcastHostPlayback(
+            song: currentSong,
+            isPlaying: false,
+            position: position,
+            ref: ref,
+          );
+        }
+      } else {
+        await music.resume();
+        if (isHost) {
+          ref.read(syncGroupServiceProvider).broadcastHostPlayback(
+            song: currentSong,
+            isPlaying: true,
+            position: position,
+            ref: ref,
+          );
+        }
+      }
+    }
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -141,9 +169,7 @@ class MiniPlayer extends ConsumerWidget {
                       color: AppColors.textPrimary,
                       size: 32,
                     ),
-                    onPressed: () => isPlaying
-                        ? ref.read(musicServiceProvider).pause()
-                        : ref.read(musicServiceProvider).resume(),
+                    onPressed: togglePlayPause,
                   ),
                 ],
               ),
@@ -154,3 +180,4 @@ class MiniPlayer extends ConsumerWidget {
     );
   }
 }
+

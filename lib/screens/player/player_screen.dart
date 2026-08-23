@@ -18,6 +18,8 @@ import '../../services/playlist_service.dart';
 import '../../services/sleep_timer_service.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../widgets/share_card_widget.dart';
+import '../../providers/sync_group_provider.dart';
+import '../sync/sync_group_screen.dart';
 import 'equalizer_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,6 +113,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
       );
     }
 
+    final activeGroup    = ref.watch(activeSyncGroupProvider);
+    final isHost         = ref.watch(isSyncHostProvider);
     final isPlaying = isPlayingAsync.value ?? false;
     final position  = positionAsync.value  ?? Duration.zero;
     final duration  = durationAsync.value  ?? const Duration(minutes: 3);
@@ -185,6 +189,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                             letterSpacing: 3,
                             color: AppColors.textPrimary,
                           ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.radio_rounded, size: 24),
+                        color: activeGroup != null ? AppColors.pink : AppColors.textPrimary,
+                        onPressed: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => const SyncGroupSheet(),
                         ),
                       ),
                       IconButton(
@@ -341,9 +355,18 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                           value: position.inMilliseconds
                               .toDouble()
                               .clamp(0, duration.inMilliseconds.toDouble()),
-                          onChanged: (v) => ref
-                              .read(musicServiceProvider)
-                              .seek(Duration(milliseconds: v.toInt())),
+                          onChanged: (v) async {
+                            final targetPos = Duration(milliseconds: v.toInt());
+                            await ref.read(musicServiceProvider).seek(targetPos);
+                            if (isHost) {
+                              ref.read(syncGroupServiceProvider).broadcastHostPlayback(
+                                song: currentSong,
+                                isPlaying: isPlaying,
+                                position: targetPos,
+                                ref: ref,
+                              );
+                            }
+                          },
                         ),
                       ),
                       Padding(
@@ -396,9 +419,30 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
                       // Play / Pause
                       GestureDetector(
-                        onTap: () => isPlaying
-                            ? ref.read(musicServiceProvider).pause()
-                            : ref.read(musicServiceProvider).resume(),
+                        onTap: () async {
+                          final music = ref.read(musicServiceProvider);
+                          if (isPlaying) {
+                            await music.pause();
+                            if (isHost) {
+                              ref.read(syncGroupServiceProvider).broadcastHostPlayback(
+                                song: currentSong,
+                                isPlaying: false,
+                                position: position,
+                                ref: ref,
+                              );
+                            }
+                          } else {
+                            await music.resume();
+                            if (isHost) {
+                              ref.read(syncGroupServiceProvider).broadcastHostPlayback(
+                                song: currentSong,
+                                isPlaying: true,
+                                position: position,
+                                ref: ref,
+                              );
+                            }
+                          }
+                        },
                         child: NeoBox(
                           color: AppColors.yellow,
                           borderRadius: 50,

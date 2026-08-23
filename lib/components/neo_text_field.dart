@@ -8,6 +8,9 @@ class NeoTextField extends StatelessWidget {
   final bool obscureText;
   final TextInputType? keyboardType;
   final Widget? suffixIcon;
+  final TextCapitalization textCapitalization;
+  final TextAlign textAlign;
+  final TextStyle? style;
 
   const NeoTextField({
     super.key,
@@ -16,6 +19,9 @@ class NeoTextField extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType,
     this.suffixIcon,
+    this.textCapitalization = TextCapitalization.none,
+    this.textAlign = TextAlign.start,
+    this.style,
   });
 
   @override
@@ -27,10 +33,13 @@ class NeoTextField extends StatelessWidget {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
+        textCapitalization: textCapitalization,
+        textAlign: textAlign,
+        style: style ??
+            const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hintText,

@@ -8,6 +8,7 @@ import '../../models/song_model.dart';
 import '../../services/music_service.dart';
 import '../../services/recently_played_service.dart';
 import '../../providers/saavn_provider.dart';
+import '../../providers/sync_group_provider.dart';
 import '../album/album_screen.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -423,6 +424,8 @@ class _SongList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final activeGroup = ref.watch(activeSyncGroupProvider);
+
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
       itemCount: songs.length,
@@ -495,10 +498,27 @@ class _SongList extends ConsumerWidget {
                     ),
                   ),
 
-                  const Icon(
-                    Icons.play_arrow,
-                    size: 28,
-                    color: AppColors.textPrimary,
+                  if (activeGroup != null)
+                    IconButton(
+                      icon: const Icon(Icons.playlist_add_rounded, color: Colors.black, size: 26),
+                      tooltip: 'Add to Group Queue',
+                      onPressed: () async {
+                        await ref.read(syncGroupControllerProvider).addToQueue(song);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Added "${song.title}" to Group Queue!'),
+                              backgroundColor: AppColors.green,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+
+                  IconButton(
+                    icon: const Icon(Icons.play_arrow, size: 28, color: Colors.black),
+                    onPressed: () => ref.read(musicServiceProvider).playQueue(songs, i, ref),
                   ),
                 ],
               ),

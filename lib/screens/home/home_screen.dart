@@ -12,6 +12,7 @@ import '../../components/neo_box.dart';
 import '../../providers/saavn_provider.dart';
 import '../../providers/recommendations_provider.dart';
 import '../album/album_screen.dart';
+import '../sync/sync_group_screen.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Home Screen
@@ -39,6 +40,18 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('DISCOVER'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.radio_rounded, color: AppColors.pink),
+            tooltip: 'Group Music Sync',
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const SyncGroupSheet(),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',

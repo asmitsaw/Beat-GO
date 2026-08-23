@@ -3,8 +3,10 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_colors.dart';
 import '../../services/music_service.dart';
+import '../../widgets/sync_status_badge.dart';
 import '../../widgets/mini_player.dart';
 import '../../providers/recommendations_provider.dart';
+import '../../providers/sync_group_provider.dart';
 import '../../screens/onboarding/music_preferences_screen.dart';
 import 'home_screen.dart';
 import '../library/library_screen.dart';
@@ -61,12 +63,22 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
     ref.watch(autoplayProvider);
     ref.watch(activeSongChangedProvider);
     final currentSong = ref.watch(currentSongProvider);
+    final activeGroup = ref.watch(activeSyncGroupProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: Stack(
         children: [
           _screens[_currentIndex],
+
+          // Sync status badge pill at top right floating position if active
+          if (activeGroup != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              right: 16,
+              child: const SyncStatusBadge(),
+            ),
+
           // Mini player floats above bottom nav
           if (currentSong != null)
             Positioned(
@@ -76,6 +88,7 @@ class _MainWrapperState extends ConsumerState<MainWrapper> {
             ),
         ],
       ),
+
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(

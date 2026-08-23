@@ -175,3 +175,52 @@ VALUES
     195000
   )
 ON CONFLICT DO NOTHING;
+
+
+-- ── 8. SYNC GROUPS (Multi-device synchronized music party) ──
+CREATE TABLE IF NOT EXISTS public.sync_groups (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code                  TEXT UNIQUE NOT NULL,
+  host_id               UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  host_name             TEXT NOT NULL,
+  current_song          JSONB,
+  is_playing            BOOLEAN DEFAULT false,
+  position_ms           INT DEFAULT 0,
+  playback_timestamp_ms BIGINT DEFAULT 0,
+  created_at            TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS sync_groups_code_idx ON public.sync_groups(code);
+
+ALTER TABLE public.sync_groups ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Sync groups are readable by authenticated users" ON public.sync_groups
+  FOR SELECT USING (true);
+CREATE POLICY "Host can insert sync groups" ON public.sync_groups
+  FOR INSERT WITH CHECK (auth.uid() = host_id);
+CREATE POLICY "Host can update own sync groups" ON public.sync_groups
+  FOR UPDATE USING (true);
+CREATE POLICY "Host can delete own sync groups" ON public.sync_groups
+  FOR DELETE USING (auth.uid() = host_id);
+
+
+-- ── 9. SYNC GROUP QUEUE (Shared Queue) ────────────────────────
+CREATE TABLE IF NOT EXISTS public.sync_group_queue (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id      UUID REFERENCES public.sync_groups(id) ON DELETE CASCADE NOT NULL,
+  song          JSONB NOT NULL,
+  added_by_id   UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  added_by_name TEXT NOT NULL,
+  position      INT DEFAULT 0,
+  added_at      TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS sync_group_queue_group_idx ON public.sync_group_queue(group_id, position);
+
+ALTER TABLE public.sync_group_queue ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Sync group queue is readable by all" ON public.sync_group_queue
+  FOR SELECT USING (true);
+CREATE POLICY "Group members can insert to queue" ON public.sync_group_queue
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Group members can delete from queue" ON public.sync_group_queue
+  FOR DELETE USING (true);
+
