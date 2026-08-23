@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:just_audio/just_audio.dart';
 
 import '../core/supabase_client.dart';
 import '../models/song_model.dart';
