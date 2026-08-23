@@ -283,10 +283,9 @@ class SyncGroupService {
       'timestamp_ms': now,
     };
 
-    // Fast WebSockets Broadcast
-    // ignore: invalid_use_of_internal_member
-    _channel!.send(
-      type: RealtimeListenTypes.broadcast,
+    // Fast WebSockets Broadcast via Dynamic Dispatch
+    (_channel as dynamic)?.send(
+      type: 'broadcast',
       event: 'playback_state',
       payload: payload,
     );
@@ -424,9 +423,8 @@ class SyncGroupService {
 
     // Broadcast queue update via WebSocket
     if (_channel != null) {
-      // ignore: invalid_use_of_internal_member
-      _channel!.send(
-        type: RealtimeListenTypes.broadcast,
+      (_channel as dynamic)?.send(
+        type: 'broadcast',
         event: 'queue_updated',
         payload: {
           'queue': _groupQueue.map((i) => i.toMap()).toList(),
@@ -453,9 +451,8 @@ class SyncGroupService {
     onQueueUpdated?.call(_groupQueue);
 
     if (_channel != null) {
-      // ignore: invalid_use_of_internal_member
-      _channel!.send(
-        type: RealtimeListenTypes.broadcast,
+      (_channel as dynamic)?.send(
+        type: 'broadcast',
         event: 'queue_updated',
         payload: {
           'queue': _groupQueue.map((i) => i.toMap()).toList(),
